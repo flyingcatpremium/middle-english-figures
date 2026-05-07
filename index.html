@@ -85,7 +85,14 @@ aside.directory > h2 small{font-size:11px; opacity:.85; letter-spacing:1px}
   padding:10px 12px; border-bottom:1px solid var(--rule);
   background:#fff8e8; display:grid; gap:8px;
   font-family:'Inter',sans-serif;
+  /* always allow internal scroll so the new-entry form is never clipped */
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  flex-shrink: 0;
 }
+.controls::-webkit-scrollbar{width:8px}
+.controls::-webkit-scrollbar-thumb{background:#cbbe9f88; border-radius:4px}
+.controls::-webkit-scrollbar-thumb:hover{background:#cbbe9f}
 .controls .row{display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center}
 .controls label{font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#6b5d3d}
 .controls select, .controls input[type=search]{
@@ -194,6 +201,17 @@ main.profile{
   word-break:break-all;
 }
 .hero .portrait:hover .photoedit{opacity:1}
+.hero .portrait{cursor:pointer; transition:outline-color .15s ease}
+.hero .portrait.dragover{outline:3px dashed var(--berkeley-gold); outline-offset:-3px; background:#fffbeb}
+.hero .portrait .drophint{
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  display:none; place-items:center; flex-direction:column; gap:6px;
+  background:rgba(255,251,235,.9); color:var(--berkeley-blue);
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+  letter-spacing:.5px; pointer-events:none;
+}
+.hero .portrait.dragover .drophint{display:flex}
+.hero .portrait .drophint .icn{font-size:36px; color:var(--berkeley-gold)}
 .hero h1[contenteditable]{outline:none}
 .hero h1{
   margin:0 0 4px; font-family:'EB Garamond',serif;
@@ -349,6 +367,25 @@ footer.site .brule{
   font-family:'Inter',sans-serif;
 }
 .adddialog.open{display:flex}
+/* allow the controls strip itself to scroll internally when the form makes it taller than the sidebar */
+aside.directory:has(.adddialog.open) .controls{
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+/* fallback for browsers without :has() — give the dialog its own internal scroll */
+.adddialog.open{
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+/* sticky save bar so 保存并打开 stays reachable as user scrolls inside the form */
+.adddialog .actions{
+  position: sticky;
+  bottom: -10px;
+  margin: 8px -12px -10px;
+  padding: 8px 12px 10px;
+  background: linear-gradient(180deg, transparent, #fffbeb 30%);
+  z-index: 1;
+}
 .adddialog .head{
   display:flex; justify-content:space-between; align-items:center;
   font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
@@ -1714,7 +1751,8 @@ function renderProfile(p){
     <div class="hero">
       <div class="portrait" id="portrait" style="overflow:hidden">
         ${url?`<img id="heroImg" src="${url}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;object-position:${ppos}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'photoplaceholder',innerText:'${p.initials||p.name[0]}'}))">`:`<div class="photoplaceholder">${p.initials||p.name[0]}</div>`}
-        <div class="photoedit" contenteditable="true" data-field="photo" data-placeholder="粘贴照片 URL 或 photos/ 内文件名…">${p.photo||""}</div>
+        <div class="drophint"><div class="icn">⬆</div>放下图片即可</div>
+        <div class="photoedit" contenteditable="true" data-field="photo" data-placeholder="拖入图片，或点击选择，或粘贴 URL / photos/ 文件名">${p.photo||""}</div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">${kindTag}${delBtn}</div>
@@ -1761,6 +1799,27 @@ function renderProfile(p){
   profileEl.querySelectorAll('.rellink[data-id]').forEach(a=>{
     a.addEventListener('click',e=>{e.preventDefault();select(a.dataset.id);});
   });
+
+  /* ---- portrait drag-drop / click-to-pick ---- */
+  const portrait=profileEl.querySelector('#portrait');
+  if(portrait){
+    portrait.addEventListener('dragenter', e=>{ if(e.dataTransfer && [...(e.dataTransfer.types||[])].includes('Files')){ e.preventDefault(); portrait.classList.add('dragover'); } });
+    portrait.addEventListener('dragover',  e=>{ if(e.dataTransfer && [...(e.dataTransfer.types||[])].includes('Files')){ e.preventDefault(); portrait.classList.add('dragover'); } });
+    portrait.addEventListener('dragleave', e=>{ if(e.target===portrait || !portrait.contains(e.relatedTarget)) portrait.classList.remove('dragover'); });
+    portrait.addEventListener('drop', e=>{
+      e.preventDefault(); portrait.classList.remove('dragover');
+      const f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if(f) ingestImageFile(f);
+    });
+    portrait.addEventListener('click', e=>{
+      /* don't intercept clicks inside the contenteditable URL bar */
+      if(e.target.closest('.photoedit')) return;
+      const inp=document.createElement('input');
+      inp.type='file'; inp.accept='image/*';
+      inp.addEventListener('change',()=>{ if(inp.files[0]) ingestImageFile(inp.files[0]); });
+      inp.click();
+    });
+  }
 
   const del=profileEl.querySelector('#delEntryBtn');
   if(del){
@@ -1848,6 +1907,55 @@ function select(id){
   renderList(); renderProfile(p); window.scrollTo({top:0,behavior:'smooth'});
 }
 
+/* ---------- Image ingest (drop / click-to-pick) ---------- */
+function resizeImageToDataUrl(file, maxW, maxH, quality){
+  return new Promise((resolve, reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.naturalWidth, h=img.naturalHeight;
+        const ratio=Math.min(maxW/w, maxH/h, 1);
+        w=Math.round(w*ratio); h=Math.round(h*ratio);
+        const canvas=document.createElement('canvas');
+        canvas.width=w; canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        try{ resolve(canvas.toDataURL('image/jpeg', quality)); }catch(e){ reject(e); }
+      };
+      img.onerror=reject;
+      img.src=fr.result;
+    };
+    fr.onerror=reject;
+    fr.readAsDataURL(file);
+  });
+}
+
+function ingestImageFile(file){
+  if(!file || !/^image\//.test(file.type)){ alert('请拖入图片文件（PNG / JPG / WEBP / GIF）。'); return; }
+  setSavingState('saving');
+  resizeImageToDataUrl(file, 600, 800, 0.85).then(dataUrl=>{
+    if(isUserId(currentId)){
+      const arr=loadUserEntries();
+      const idx=arr.findIndex(x=>x.id===currentId);
+      if(idx<0) return;
+      arr[idx].photo=dataUrl;
+      saveUserEntries(arr);
+    } else {
+      const ov=loadOverrides(currentId);
+      ov.photo=dataUrl;
+      saveOverrides(currentId, ov);
+    }
+    const p=entryById(currentId);
+    renderProfile(p); flashSaved();
+  }).catch(err=>{
+    console.error(err);
+    alert('读取图片失败：'+(err.message||err));
+    setSavingState('');
+  });
+}
+
 qEl.addEventListener('input',e=>{state.q=e.target.value;renderList();});
 sortKeyEl.addEventListener('change',e=>{state.sortKey=e.target.value;renderList();});
 sortDirEl.addEventListener('click',()=>{state.sortDir=state.sortDir==='asc'?'desc':'asc';sortDirEl.dataset.dir=state.sortDir;renderList();});
@@ -1906,7 +2014,14 @@ const addTitle    = document.getElementById('addTitle');
 const addSummary  = document.getElementById('addSummary');
 const addUrl      = document.getElementById('addUrl');
 
-function openAddDialog(){ addDialog.classList.add('open'); addName.focus(); }
+function openAddDialog(){
+  addDialog.classList.add('open');
+  /* scroll the dialog into view inside the controls panel */
+  setTimeout(()=>{
+    addDialog.scrollIntoView({behavior:'smooth', block:'start'});
+    addName.focus();
+  }, 30);
+}
 function closeAddDialog(){ addDialog.classList.remove('open'); }
 function clearAddDialog(){
   addKind.value="figure"; addName.value=""; addNameZh.value="";
@@ -1976,9 +2091,20 @@ addSave.addEventListener('click', ()=>{
 
   const arr=loadUserEntries(); arr.push(obj); saveUserEntries(arr);
   closeAddDialog(); clearAddDialog();
+  /* clear search box so the new entry isn't hidden by a stale query */
+  if(state.q){ state.q=""; qEl.value=""; }
+  /* reset any active filter that would hide the new entry */
   if(state.kind && state.kind!==obj.kind){
     state.kind=obj.kind;
     kindChips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', c.dataset.kind===obj.kind));
+  }
+  if(state.era && state.era!==obj.era){
+    state.era="";
+    eraChips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', !c.dataset.era));
+  }
+  if(state.role && state.role!==obj.role){
+    state.role="";
+    roleChips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', !c.dataset.role));
   }
   currentId=obj.id;
   renderList(); renderProfile(entryById(obj.id));
