@@ -1,0 +1,2530 @@
+"""Generate index.html for the Middle English Historical Figures Directory.
+
+Mirrors the design of 中世纪英国文学教授目录.html (Berkeley blue/gold + parchment),
+but with semantics adapted for historical persons (poets, monarchs, mystics,
+chroniclers, prelates, printers) from the Middle English period and into early
+Tudor times.
+"""
+
+import json
+import textwrap
+from pathlib import Path
+
+# Output sits next to this script (same folder = the deploy / repo root).
+TARGET = Path(__file__).resolve().parent / "index.html"
+
+# ---------------------------------------------------------------------------
+# DATA
+# ---------------------------------------------------------------------------
+
+FIGURES = [
+    # ============================ EARLY MEDIEVAL ===========================
+    {
+        "id": "henry-ii",
+        "name": "Henry II",
+        "nameZh": "亨利二世",
+        "surname": "Henry II",
+        "given": "Henry",
+        "era": "early-medieval",
+        "role": "monarch",
+        "birthYear": 1133,
+        "deathYear": 1189,
+        "lifespan": "1133 – 1189",
+        "title": "King of England (1154–1189)",
+        "titleZh": "英格兰国王（1154–1189 在位）",
+        "affiliation": "House of Plantagenet · Angevin Empire",
+        "affiliationZh": "金雀花王朝 · 安茹帝国",
+        "specialties": ["Plantagenet", "Common Law", "Becket Crisis"],
+        "initials": "H2",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Henry_II_of_England",
+        "bio": (
+            "<p>金雀花王朝开创君主，统治覆盖英格兰、诺曼底、安茹、阿基坦在内的"
+            "广袤领地。其司法改革奠定了普通法的雏形，对后世英语世界的法律传统"
+            "影响深远。</p>"
+            "<p>与坎特伯雷大主教托马斯·贝克特之争最终以贝克特殉教告终，事件成为"
+            "中古英语朝圣文化与文学（尤其是后世乔叟《坎特伯雷故事集》）的核心"
+            "记忆背景。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong>克拉伦敦敕令（Constitutions of Clarendon, 1164）</strong>"
+            "——试图限制教会司法权，引发与贝克特冲突。</li>"
+            "<li><strong>巡回法庭体系</strong>——奠定 King's Bench 与陪审制雏形。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1154</span> 加冕为英王，开金雀花王朝。</div>"
+            "<div class='tl-item'><span class='tl-year'>1164</span> 颁布克拉伦敦敕令。</div>"
+            "<div class='tl-item'><span class='tl-year'>1170</span> 贝克特在坎特伯雷大教堂被杀。</div>"
+            "<div class='tl-item'><span class='tl-year'>1173–74</span> 与儿子及阿基坦的埃莉诺联手发动的叛乱被镇压。</div>"
+            "<div class='tl-item'><span class='tl-year'>1189</span> 在希农去世。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>配偶：<a class='rellink' data-id='eleanor-aquitaine'>阿基坦的埃莉诺</a></li>"
+            "<li>政敌：<a class='rellink' data-id='thomas-becket'>托马斯·贝克特</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "eleanor-aquitaine",
+        "name": "Eleanor of Aquitaine",
+        "nameZh": "阿基坦的埃莉诺",
+        "surname": "Eleanor",
+        "given": "Eleanor",
+        "era": "early-medieval",
+        "role": "monarch",
+        "birthYear": 1122,
+        "deathYear": 1204,
+        "lifespan": "c. 1122 – 1204",
+        "title": "Queen Consort of France & England · Duchess of Aquitaine",
+        "titleZh": "法兰西王后、英格兰王后、阿基坦女公爵",
+        "affiliation": "House of Poitiers / Plantagenet",
+        "affiliationZh": "普瓦捷家族 / 金雀花王朝",
+        "specialties": ["Patronage", "Courtly Love", "Troubadour Culture"],
+        "initials": "EA",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Eleanor_of_Aquitaine",
+        "bio": (
+            "<p>十二世纪欧洲最具权势的女性之一，先后为法王路易七世与英王亨利"
+            "二世的王后。她将南法宫廷的诗歌传统、抒情诗（trobadour）与骑士爱"
+            "（amour courtois）的氛围带入英格兰宫廷，是中古英语文学之前不列颠"
+            "诗歌生态最重要的赞助人之一。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li>赞助南法 trobadour、北法 trouvère 进入英格兰宫廷。</li>"
+            "<li>据信支持过《罗兰之歌》一类的早期 chanson de geste 流通。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1137</span> 嫁法王路易七世。</div>"
+            "<div class='tl-item'><span class='tl-year'>1147–49</span> 随第二次十字军东征。</div>"
+            "<div class='tl-item'><span class='tl-year'>1152</span> 与路易七世离婚后嫁亨利二世。</div>"
+            "<div class='tl-item'><span class='tl-year'>1173</span> 联合儿子起兵反夫，遭软禁。</div>"
+            "<div class='tl-item'><span class='tl-year'>1204</span> 卒于丰特弗罗。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>配偶：<a class='rellink' data-id='henry-ii'>亨利二世</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "thomas-becket",
+        "name": "Thomas Becket",
+        "nameZh": "托马斯·贝克特",
+        "surname": "Becket",
+        "given": "Thomas",
+        "era": "early-medieval",
+        "role": "prelate",
+        "birthYear": 1119,
+        "deathYear": 1170,
+        "lifespan": "c. 1119 – 1170",
+        "title": "Archbishop of Canterbury · Martyr",
+        "titleZh": "坎特伯雷大主教 · 殉道者",
+        "affiliation": "Church of England · Canterbury",
+        "affiliationZh": "英格兰教会 · 坎特伯雷",
+        "specialties": ["Canterbury Cult", "Martyrdom", "Pilgrimage"],
+        "initials": "TB",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Thomas_Becket",
+        "bio": (
+            "<p>原为亨利二世亲信大法官，1162 年升任坎特伯雷大主教后立场转变，"
+            "为捍卫教会司法独立与王权对峙。1170 年圣诞节后，被四名骑士在大教"
+            "堂内刺杀。</p>"
+            "<p>其殉教在中古英国引发巨大宗教震动，坎特伯雷成为整个西欧最重要的"
+            "朝圣地之一——这正是日后乔叟《坎特伯雷故事集》朝圣框架的历史前提。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li>留下大量与亨利二世、教皇及英格兰主教的往来书信，是 12 世纪英国"
+            "教会—国家关系的核心一手史料。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1162</span> 任坎特伯雷大主教。</div>"
+            "<div class='tl-item'><span class='tl-year'>1164</span> 拒签克拉伦敦敕令，流亡法兰西。</div>"
+            "<div class='tl-item'><span class='tl-year'>1170</span> 圣诞次日在坎特伯雷大教堂被杀。</div>"
+            "<div class='tl-item'><span class='tl-year'>1173</span> 教皇亚历山大三世册封圣徒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>对手：<a class='rellink' data-id='henry-ii'>亨利二世</a></li>"
+            "<li>朝圣对象，影响：<a class='rellink' data-id='chaucer'>乔叟</a> "
+            "《坎特伯雷故事集》</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "layamon",
+        "name": "Laȝamon",
+        "nameZh": "拉亚蒙",
+        "surname": "Layamon",
+        "given": "Layamon",
+        "era": "early-medieval",
+        "role": "poet",
+        "birthYear": 1185,
+        "deathYear": 1215,
+        "lifespan": "fl. c. 1190 – 1215",
+        "title": "Anglo-Norman / Early Middle English Poet",
+        "titleZh": "盎格鲁-诺曼至早期中古英语诗人",
+        "affiliation": "Worcestershire · Areley Kings",
+        "affiliationZh": "伍斯特郡 · 阿利国王教区",
+        "specialties": ["Brut", "Alliterative Verse", "Arthurian"],
+        "initials": "Lz",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Layamon",
+        "bio": (
+            "<p>伍斯特郡阿利国王教区的英语本土堂区司铎。以早期中古英语写就的"
+            "<em>Brut</em>（约 1190–1215 年间），改编自 Wace 的盎格鲁-诺曼版"
+            "《Roman de Brut》，是现存最早系统讲述亚瑟王传说、并使用半头韵半"
+            "押韵的英语长篇诗作。</p>"
+            "<p>其语言保守，几乎不掺法语借词，研究者据此辨认 1066 年后英语口语"
+            "在西部边缘地带的延续状况，是从古英语到中古英语过渡的关键文本。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>Brut</em></strong>（c. 1190–1215）——约 16,000 行，"
+            "现存于大英图书馆 Cotton Caligula A.ix 与 Cotton Otho C.xiii。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1185</span> 推断生年。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1190–1215</span> 创作 <em>Brut</em>。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>蓝本：Wace《Roman de Brut》（1155）</li>"
+            "<li>亚瑟王题材后续：<a class='rellink' data-id='malory'>Sir Thomas Malory</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    # ============================ HIGH MEDIEVAL ============================
+    {
+        "id": "manning",
+        "name": "Robert Manning of Brunne",
+        "nameZh": "罗伯特·曼宁",
+        "surname": "Manning",
+        "given": "Robert",
+        "era": "high-medieval",
+        "role": "chronicler",
+        "birthYear": 1264,
+        "deathYear": 1340,
+        "lifespan": "c. 1264 – c. 1340",
+        "title": "Gilbertine Canon · Chronicler & Translator",
+        "titleZh": "吉尔伯特会修士 · 编年史家、译者",
+        "affiliation": "Sempringham · Sixhills (Lincolnshire)",
+        "affiliationZh": "森普林汉姆 · 林肯郡 Sixhills 修道院",
+        "specialties": ["Handlyng Synne", "Chronicle", "East Midland"],
+        "initials": "RM",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Robert_Manning",
+        "bio": (
+            "<p>林肯郡吉尔伯特修会修士，长期居于 Sixhills 与 Sempringham 修道"
+            "院。其作品以 East Midland 方言写就，是该方言进入文学正典的重要"
+            "里程碑——现代标准英语正是从该方言系统演化而来。</p>"
+            "<p>《Handlyng Synne》（1303 起译）改编自盎格鲁-诺曼语 William of "
+            "Wadington 的《Manuel des Péchés》，将七宗罪、十诫、忏悔教义以生动"
+            "故事说给俗众听。其语言通俗、节奏明快，是研究 14 世纪英国通俗宗教"
+            "想象的珍贵窗口。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>Handlyng Synne</em></strong>（始译于 1303）——12,630 行"
+            "对仗短行诗。</li>"
+            "<li><strong><em>The Chronicle / Story of England</em></strong>（成于 1338）"
+            "——以 Wace 的《Roman de Brut》及 Pierre de Langtoft 的法语编年史为"
+            "底本，追述自布鲁图斯至爱德华一世。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1264</span> 生于林肯郡 Bourne。</div>"
+            "<div class='tl-item'><span class='tl-year'>1288</span> 入吉尔伯特会 Sixhills 修道院。</div>"
+            "<div class='tl-item'><span class='tl-year'>1303</span> 起译 <em>Handlyng Synne</em>。</div>"
+            "<div class='tl-item'><span class='tl-year'>1338</span> 完成 <em>Chronicle</em>。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1340</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>同代忏悔文学：<a class='rellink' data-id='gower'>John Gower</a> "
+            "《Confessio Amantis》</li>"
+            "<li>布鲁图斯传统蓝本：<a class='rellink' data-id='layamon'>Laȝamon</a> "
+            "《Brut》</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "edward-iii",
+        "name": "Edward III",
+        "nameZh": "爱德华三世",
+        "surname": "Edward III",
+        "given": "Edward",
+        "era": "high-medieval",
+        "role": "monarch",
+        "birthYear": 1312,
+        "deathYear": 1377,
+        "lifespan": "1312 – 1377",
+        "title": "King of England (1327–1377)",
+        "titleZh": "英格兰国王（1327–1377 在位）",
+        "affiliation": "House of Plantagenet",
+        "affiliationZh": "金雀花王朝",
+        "specialties": ["Hundred Years War", "Order of the Garter", "Crécy"],
+        "initials": "E3",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Edward_III_of_England",
+        "bio": (
+            "<p>金雀花王朝中期最显赫的君主之一。其在位五十年间，发动百年战争前"
+            "期，于克雷西、普瓦捷接连大胜法军；1348 年创立嘉德骑士团，将骑士"
+            "理想制度化。</p>"
+            "<p>他在位末期，少年乔叟即在其儿媳妇昂特卫普的莱昂内尔家中作侍童，"
+            "进入王廷文化圈，为日后宫廷诗人生涯打底。1348–49 年的黑死病席卷"
+            "其治下的英格兰，是 14 世纪后半叶所有英语文学（《农夫皮尔斯》《坎"
+            "特伯雷故事集》）无法绕开的背景事件。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong>嘉德骑士团章程（1348）</strong>——欧洲最古老的骑士勋位"
+            "制度之一。</li>"
+            "<li>推动英语在议会与法庭中取代法语作为正式语言（1362 年 Pleading "
+            "in English Act）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1327</span> 即位。</div>"
+            "<div class='tl-item'><span class='tl-year'>1337</span> 自称法王，百年战争爆发。</div>"
+            "<div class='tl-item'><span class='tl-year'>1346</span> 克雷西大捷。</div>"
+            "<div class='tl-item'><span class='tl-year'>1348</span> 创嘉德骑士团；黑死病登陆英格兰。</div>"
+            "<div class='tl-item'><span class='tl-year'>1356</span> 普瓦捷之战，俘虏法王约翰二世。</div>"
+            "<div class='tl-item'><span class='tl-year'>1377</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>孙辈：<a class='rellink' data-id='richard-ii'>理查二世</a>、"
+            "<a class='rellink' data-id='henry-iv'>亨利四世</a></li>"
+            "<li>少年时代庇护：<a class='rellink' data-id='chaucer'>乔叟</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "richard-rolle",
+        "name": "Richard Rolle",
+        "nameZh": "理查·罗尔",
+        "surname": "Rolle",
+        "given": "Richard",
+        "era": "high-medieval",
+        "role": "mystic",
+        "birthYear": 1300,
+        "deathYear": 1349,
+        "lifespan": "c. 1300 – 1349",
+        "title": "Hermit · English Mystic",
+        "titleZh": "隐修士 · 英国神秘主义者",
+        "affiliation": "Hampole · Yorkshire",
+        "affiliationZh": "约克郡 · 汉普尔",
+        "specialties": ["Mysticism", "Lyric", "Vernacular Devotion"],
+        "initials": "RR",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Richard_Rolle",
+        "bio": (
+            "<p>约克郡 Thornton-le-Dale 出生，年少时弃牛津学业，自制隐修服，开始"
+            "流动隐修生涯。其拉丁与英语作品融抒情、神秘体验、灵修指南于一炉，"
+            "强调火（calor）、甘美（dulcor）、歌（canor）三重灵魂感受。</p>"
+            "<p>是 14 世纪英语神秘主义文学的开端，影响了 Cloud of Unknowing、"
+            "Walter Hilton、以及 Margery Kempe、Julian of Norwich 一脉。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>The Form of Living</em></strong>（c. 1348）——为隐修女"
+            "玛格丽特·柯克比所作的英文灵修指南。</li>"
+            "<li><strong><em>Incendium Amoris</em>（爱火）</strong>——拉丁文神秘体验"
+            "自述。</li>"
+            "<li>大量英语抒情诗与<em>Psalter</em>注释。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1300</span> 生。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1318</span> 弃牛津，开始隐修。</div>"
+            "<div class='tl-item'><span class='tl-year'>1349</span> 黑死病期间卒于汉普尔。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>启发：<a class='rellink' data-id='julian'>Julian of Norwich</a>、"
+            "<a class='rellink' data-id='kempe'>Margery Kempe</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "wycliffe",
+        "name": "John Wycliffe",
+        "nameZh": "约翰·威克里夫",
+        "surname": "Wycliffe",
+        "given": "John",
+        "era": "high-medieval",
+        "role": "prelate",
+        "birthYear": 1330,
+        "deathYear": 1384,
+        "lifespan": "c. 1330 – 1384",
+        "title": "Theologian · Reformer · Master of Balliol",
+        "titleZh": "神学家、改革者、贝利奥尔学院院长",
+        "affiliation": "University of Oxford · Lutterworth",
+        "affiliationZh": "牛津大学 · 拉特沃斯",
+        "specialties": ["Wycliffite Bible", "Lollardy", "Vernacular Scripture"],
+        "initials": "JW",
+        "sourceUrl": "https://en.wikipedia.org/wiki/John_Wycliffe",
+        "bio": (
+            "<p>牛津神学家，1372 年获神学博士。主张教会应放弃世俗财产、教皇权"
+            "威应受质疑、圣经权威高于教会传统，并坚持圣经必须以信徒能读懂的"
+            "本土语言流通。</p>"
+            "<p>其团队（Nicholas of Hereford、John Purvey 等）牵头将整本拉丁"
+            "武加大圣经译为中古英语，史称 Wycliffite Bible（约 1382–95 在两个"
+            "版本间修订），是英语圣经史的开端，也直接催生罗拉德派（Lollards）"
+            "改革运动，预演宗教改革。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong>Wycliffite Bible</strong>（早版 c. 1382 / 后期 c. 1395）。</li>"
+            "<li><em>De Civili Dominio</em>、<em>De Veritate Sacrae Scripturae</em>"
+            "等拉丁神学著作。</li>"
+            "<li>大量英语布道辞与论辩短文。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1372</span> 牛津获神学博士。</div>"
+            "<div class='tl-item'><span class='tl-year'>1377</span> 教皇格里高利十一世签发五道谕令谴责其学说。</div>"
+            "<div class='tl-item'><span class='tl-year'>1382</span> Earthquake Synod 谴责其 24 条命题。</div>"
+            "<div class='tl-item'><span class='tl-year'>1384</span> 卒于拉特沃斯任所。</div>"
+            "<div class='tl-item'><span class='tl-year'>1428</span> 遗骸被挖出焚毁，骨灰投入斯威夫特河。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>政治庇护：冈特的约翰（兰开斯特公爵）</li>"
+            "<li>反对者：<a class='rellink' data-id='kempe'>Margery Kempe</a> "
+            "曾因被疑为 Lollard 受审。</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "chaucer",
+        "name": "Geoffrey Chaucer",
+        "nameZh": "杰弗里·乔叟",
+        "surname": "Chaucer",
+        "given": "Geoffrey",
+        "era": "high-medieval",
+        "role": "poet",
+        "birthYear": 1343,
+        "deathYear": 1400,
+        "lifespan": "c. 1343 – 1400",
+        "title": "Civil Servant · Father of English Poetry",
+        "titleZh": "宫廷文官 · 英语诗歌之父",
+        "affiliation": "Royal Court · London Customs House",
+        "affiliationZh": "王廷 · 伦敦海关",
+        "specialties": ["Canterbury Tales", "Troilus", "Court Poetry"],
+        "initials": "GC",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Geoffrey_Chaucer",
+        "bio": (
+            "<p>伦敦酒商之子，少年起在王廷服侍。先后任海关羊毛税务总监、肯特郡"
+            "治安法官、议会议员、王室建筑总管。其外交差旅至意大利，使他较早"
+            "接触但丁、薄伽丘、彼特拉克。</p>"
+            "<p>《坎特伯雷故事集》（c. 1387–1400）以南向坎特伯雷的朝圣队伍为"
+            "框架，把不同阶层、性别、口音、文体的故事拼合成一部社会百科全书；"
+            "结合其早期梦幻诗与<em>Troilus and Criseyde</em>，奠定英语诗歌"
+            "体例（heroic couplet、rhyme royal）。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>The Canterbury Tales</em></strong>（c. 1387–1400，未竟）。</li>"
+            "<li><strong><em>Troilus and Criseyde</em></strong>（c. 1385）。</li>"
+            "<li><em>The Book of the Duchess</em>、<em>The House of Fame</em>、"
+            "<em>The Parlement of Foules</em>、<em>The Legend of Good Women</em>。</li>"
+            "<li><em>A Treatise on the Astrolabe</em>（科学散文）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1343</span> 生于伦敦酒商家庭。</div>"
+            "<div class='tl-item'><span class='tl-year'>1359</span> 随军征法被俘，王室出资赎回。</div>"
+            "<div class='tl-item'><span class='tl-year'>1374</span> 任伦敦海关羊毛税务总监。</div>"
+            "<div class='tl-item'><span class='tl-year'>1387</span> 起编《坎特伯雷故事集》。</div>"
+            "<div class='tl-item'><span class='tl-year'>1400</span> 卒于威斯敏斯特，葬于威斯敏斯特教堂"
+            "诗人角的鼻祖位置。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>少年侍童：<a class='rellink' data-id='edward-iii'>爱德华三世</a> 朝廷</li>"
+            "<li>同朝诗友：<a class='rellink' data-id='gower'>John Gower</a></li>"
+            "<li>赞助：<a class='rellink' data-id='richard-ii'>理查二世</a>、"
+            "<a class='rellink' data-id='henry-iv'>亨利四世</a></li>"
+            "<li>追随者：<a class='rellink' data-id='hoccleve'>Hoccleve</a>、"
+            "<a class='rellink' data-id='lydgate'>Lydgate</a>、"
+            "<a class='rellink' data-id='henryson'>Henryson</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "langland",
+        "name": "William Langland",
+        "nameZh": "威廉·朗格兰",
+        "surname": "Langland",
+        "given": "William",
+        "era": "high-medieval",
+        "role": "poet",
+        "birthYear": 1332,
+        "deathYear": 1386,
+        "lifespan": "c. 1332 – c. 1386",
+        "title": "Alliterative Poet",
+        "titleZh": "头韵诗人",
+        "affiliation": "Malvern Hills · London",
+        "affiliationZh": "莫尔文山区 · 伦敦",
+        "specialties": ["Piers Plowman", "Alliterative Revival", "Allegory"],
+        "initials": "WL",
+        "sourceUrl": "https://en.wikipedia.org/wiki/William_Langland",
+        "bio": (
+            "<p>身世模糊，仅可从《农夫皮尔斯》中诗中人 \"Will\" 与抄本旁注（"
+            "Trinity College Dublin MS 212）拼出大致轮廓：莫尔文山一带乡村出身、"
+            "受过低级神品、长期在伦敦讨生活。</p>"
+            "<p>《Piers Plowman》以头韵长行写成，三种主要修订（A 文本 c. 1370、"
+            "B 文本 c. 1378、C 文本 c. 1386）层层推进，是 14 世纪头韵诗复兴最"
+            "重要的成果，也是中古英语社会批评、神学想象与梦幻寓言的高峰。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>Piers Plowman</em></strong>——三个主要版本：A（c. 1370）、"
+            "B（c. 1378）、C（c. 1386）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1370</span> A 文本完成。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1378</span> B 文本完成。</div>"
+            "<div class='tl-item'><span class='tl-year'>1381</span> 农民起义，《Piers》语句被起义"
+            "组织者引用。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1386</span> C 文本完成；其后失踪于史。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>头韵传统同时代：<a class='rellink' data-id='pearl-poet'>Pearl Poet</a></li>"
+            "<li>受众：1381 年起义领袖 John Ball 的布道引文中。</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "gower",
+        "name": "John Gower",
+        "nameZh": "约翰·高尔",
+        "surname": "Gower",
+        "given": "John",
+        "era": "high-medieval",
+        "role": "poet",
+        "birthYear": 1330,
+        "deathYear": 1408,
+        "lifespan": "c. 1330 – 1408",
+        "title": "Trilingual Court Poet",
+        "titleZh": "三语宫廷诗人",
+        "affiliation": "St Mary Overie · Southwark",
+        "affiliationZh": "圣玛丽奥维瑞修道院 · 南华克",
+        "specialties": ["Confessio Amantis", "Trilingualism", "Mirror for Princes"],
+        "initials": "JG",
+        "sourceUrl": "https://en.wikipedia.org/wiki/John_Gower",
+        "bio": (
+            "<p>肯特乡绅出身，长期居于南华克圣玛丽奥维瑞修道院（今 Southwark "
+            "Cathedral）。乔叟好友，曾被乔叟在《Troilus》中称为 \"moral Gower\"。</p>"
+            "<p>跨三语创作：法语 <em>Mirour de l'Omme</em>、拉丁语 <em>Vox "
+            "Clamantis</em>、英语 <em>Confessio Amantis</em>，是中古英国少有的"
+            "完整保留三语规模作品的作家，也是研究中古英国多语共生的核心案例。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>Confessio Amantis</em></strong>（c. 1390，献给理查二世）"
+            "——七卷，超过 33,000 行八音节对偶诗，包 140 余则故事。</li>"
+            "<li><em>Vox Clamantis</em>（拉丁，1381 农民起义后写）。</li>"
+            "<li><em>Mirour de l'Omme</em>（盎格鲁-诺曼法语）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1378–80</span> 在南华克与乔叟"
+            "交往。</div>"
+            "<div class='tl-item'><span class='tl-year'>1390</span> <em>Confessio</em> 初稿献"
+            "理查二世。</div>"
+            "<div class='tl-item'><span class='tl-year'>1393</span> 改献亨利·博林布鲁克"
+            "（即未来的亨利四世）。</div>"
+            "<div class='tl-item'><span class='tl-year'>1408</span> 卒，葬南华克。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>挚友：<a class='rellink' data-id='chaucer'>Chaucer</a></li>"
+            "<li>赞助：<a class='rellink' data-id='richard-ii'>理查二世</a>、"
+            "<a class='rellink' data-id='henry-iv'>亨利四世</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "pearl-poet",
+        "name": "The Pearl Poet",
+        "nameZh": "《珍珠》诗人",
+        "surname": "Pearl Poet",
+        "given": "Pearl",
+        "era": "high-medieval",
+        "role": "poet",
+        "birthYear": 1340,
+        "deathYear": 1400,
+        "lifespan": "fl. c. 1370 – 1400",
+        "title": "Anonymous Alliterative Poet (West Midlands)",
+        "titleZh": "西米德兰兹无名头韵诗人",
+        "affiliation": "Cheshire / Staffordshire (probable)",
+        "affiliationZh": "切舍 / 斯塔福德郡（推测）",
+        "specialties": ["Sir Gawain", "Pearl", "Alliterative Revival"],
+        "initials": "Pp",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Pearl_Poet",
+        "bio": (
+            "<p>身份未知，凭单一抄本（British Library Cotton Nero A.x）保存四"
+            "首作品：<em>Pearl</em>、<em>Cleanness</em>、<em>Patience</em>、"
+            "<em>Sir Gawain and the Green Knight</em>。语言为西北米德兰兹方言，"
+            "可能与 John of Gaunt 的切舍郡领地有关。</p>"
+            "<p>同时代的另一位头韵巨匠（与朗格兰并列），但其精雕语言与对宫廷"
+            "礼仪、骑士道的精致呈现，与朗格兰的乡村质朴形成强烈对照。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>Sir Gawain and the Green Knight</em></strong>"
+            "——亚瑟王骑士传奇杰作。</li>"
+            "<li><strong><em>Pearl</em></strong>——梦幻寓言悼亡诗。</li>"
+            "<li><em>Cleanness</em>、<em>Patience</em>——宗教题材。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1380s–90s</span> 推断创作高峰期。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1400</span> 抄本 Cotton Nero A.x 抄成。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>头韵复兴同代：<a class='rellink' data-id='langland'>William Langland</a></li>"
+            "<li>亚瑟王脉络：<a class='rellink' data-id='layamon'>Laȝamon</a>、"
+            "<a class='rellink' data-id='malory'>Malory</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "julian",
+        "name": "Julian of Norwich",
+        "nameZh": "诺里奇的朱利安",
+        "surname": "Julian",
+        "given": "Julian",
+        "era": "high-medieval",
+        "role": "mystic",
+        "birthYear": 1342,
+        "deathYear": 1416,
+        "lifespan": "c. 1342 – c. 1416",
+        "title": "Anchoress · English Mystic",
+        "titleZh": "隐修女 · 英国神秘主义者",
+        "affiliation": "Anchorhold · St Julian's, Norwich",
+        "affiliationZh": "诺里奇圣朱利安堂隐修室",
+        "specialties": ["Revelations of Divine Love", "Anchoritism", "Female Mysticism"],
+        "initials": "JN",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Julian_of_Norwich",
+        "bio": (
+            "<p>1373 年 5 月 8 日重病几死之际获得十六个 \"showings\"，痊愈后写成"
+            "<em>Revelations of Divine Love</em>，是已知由女性所著最早的英语"
+            "原文长篇散文，亦是英国神秘主义最重要文献。</p>"
+            "<p>她长居诺里奇圣朱利安堂的隐修室（anchorhold），以一面小窗向外"
+            "提供属灵指引——Margery Kempe 1413 年前后专程前去咨询。</p>"
+            "<p class='pullquote'>\"All shall be well, and all manner of thing shall be well.\"</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>Revelations of Divine Love</em></strong>"
+            "——短版（c. 1373 后不久）；长版（约 20 年后修订完成）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1373</span> 5 月 8 日获 \"showings\"。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1395</span> 修订长版完成。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1413</span> Margery Kempe 来访。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1416</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>来访者：<a class='rellink' data-id='kempe'>Margery Kempe</a></li>"
+            "<li>神秘主义传统先行者：<a class='rellink' data-id='richard-rolle'>Richard Rolle</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "richard-ii",
+        "name": "Richard II",
+        "nameZh": "理查二世",
+        "surname": "Richard II",
+        "given": "Richard",
+        "era": "high-medieval",
+        "role": "monarch",
+        "birthYear": 1367,
+        "deathYear": 1400,
+        "lifespan": "1367 – 1400",
+        "title": "King of England (1377–1399)",
+        "titleZh": "英格兰国王（1377–1399 在位）",
+        "affiliation": "House of Plantagenet",
+        "affiliationZh": "金雀花王朝",
+        "specialties": ["Patron of Chaucer", "Peasants' Revolt", "Deposition"],
+        "initials": "R2",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Richard_II_of_England",
+        "bio": (
+            "<p>爱德华三世之孙，黑太子之子。十岁继位，1381 年农民起义中亲赴"
+            "Smithfield 与 Wat Tyler 谈判一段，是英国王权与平民冲突的标志性"
+            "片段。</p>"
+            "<p>是乔叟与高尔的赞助人，宫廷艺术（含 Wilton Diptych、威斯敏斯特"
+            "厅改造）极富审美雄心。1399 年被堂兄亨利·博林布鲁克废黜，开兰开"
+            "斯特王朝，自身次年神秘死于 Pontefract 城堡。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li>资助 Wilton Diptych（c. 1395）。</li>"
+            "<li>重建威斯敏斯特厅 Hammer-beam 屋顶。</li>"
+            "<li>赞助乔叟、高尔、Hoccleve 一脉。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1377</span> 十岁加冕。</div>"
+            "<div class='tl-item'><span class='tl-year'>1381</span> 农民起义。</div>"
+            "<div class='tl-item'><span class='tl-year'>1399</span> 被废，让位于亨利·博林布鲁克。</div>"
+            "<div class='tl-item'><span class='tl-year'>1400</span> 死于 Pontefract，疑遭饥饿。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>祖父：<a class='rellink' data-id='edward-iii'>爱德华三世</a></li>"
+            "<li>赞助：<a class='rellink' data-id='chaucer'>Chaucer</a>、"
+            "<a class='rellink' data-id='gower'>Gower</a></li>"
+            "<li>继任者/对手：<a class='rellink' data-id='henry-iv'>亨利四世</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    # ============================ LATE MEDIEVAL ============================
+    {
+        "id": "henry-iv",
+        "name": "Henry IV",
+        "nameZh": "亨利四世",
+        "surname": "Henry IV",
+        "given": "Henry",
+        "era": "late-medieval",
+        "role": "monarch",
+        "birthYear": 1367,
+        "deathYear": 1413,
+        "lifespan": "1367 – 1413",
+        "title": "King of England (1399–1413)",
+        "titleZh": "英格兰国王（1399–1413 在位）",
+        "affiliation": "House of Lancaster",
+        "affiliationZh": "兰开斯特王朝",
+        "specialties": ["Lancastrian", "Usurpation", "De heretico comburendo"],
+        "initials": "H4",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Henry_IV_of_England",
+        "bio": (
+            "<p>冈特的约翰之子，废黜堂兄理查二世自立，开启兰开斯特王朝。其王朝"
+            "对正统性焦虑深重，催生 Hoccleve、Lydgate 一脉的 \"君王镜鉴\" 文学"
+            "（mirrors for princes），用诗章为王权背书。</p>"
+            "<p>1401 年签 <em>De heretico comburendo</em>，开英国焚烧异端之"
+            "先例，主要针对 Wycliffe 余波下的罗拉德派。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li>1401 年 <em>De heretico comburendo</em>（焚烧异端法案）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1399</span> 废理查二世，称王。</div>"
+            "<div class='tl-item'><span class='tl-year'>1401</span> 颁焚烧异端法。</div>"
+            "<div class='tl-item'><span class='tl-year'>1413</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>父：冈特的约翰</li>"
+            "<li>对手：<a class='rellink' data-id='richard-ii'>理查二世</a></li>"
+            "<li>赞助：<a class='rellink' data-id='hoccleve'>Hoccleve</a>、"
+            "<a class='rellink' data-id='gower'>Gower</a>（晚期）</li>"
+            "<li>子：<a class='rellink' data-id='henry-v'>亨利五世</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "hoccleve",
+        "name": "Thomas Hoccleve",
+        "nameZh": "托马斯·霍克利夫",
+        "surname": "Hoccleve",
+        "given": "Thomas",
+        "era": "late-medieval",
+        "role": "poet",
+        "birthYear": 1367,
+        "deathYear": 1426,
+        "lifespan": "c. 1367 – c. 1426",
+        "title": "Privy Seal Clerk · Lancastrian Poet",
+        "titleZh": "玺印房书记 · 兰开斯特派诗人",
+        "affiliation": "Office of the Privy Seal · Westminster",
+        "affiliationZh": "威斯敏斯特玺印房",
+        "specialties": ["Regement of Princes", "Autobiography", "Mental Illness"],
+        "initials": "Hk",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Thomas_Hoccleve",
+        "bio": (
+            "<p>玺印房书记，自称乔叟门徒。<em>Regement of Princes</em>"
+            "（1411）献给威尔士亲王（即未来的亨利五世），是英语 mirror for "
+            "princes 体裁的代表。</p>"
+            "<p><em>The Series</em>（约 1420 后）罕见地以诗体直陈自己 5 年精神"
+            "疾病发作与社会复归之困境，为研究中世纪心理史与作者自我意识的"
+            "稀缺一手文献。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>The Regement of Princes</em></strong>（1411）。</li>"
+            "<li><em>La Male Regle</em>（c. 1405）。</li>"
+            "<li><em>The Series</em>（含 <em>Complaint</em> & <em>Dialogue</em>，c. 1419–21）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1387</span> 入玺印房。</div>"
+            "<div class='tl-item'><span class='tl-year'>1411</span> 献 <em>Regement</em>。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1416</span> 精神病发作，离群索居。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1426</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>师承：<a class='rellink' data-id='chaucer'>Chaucer</a>"
+            "（其抄本中保留乔叟最早的肖像）。</li>"
+            "<li>献辞对象：<a class='rellink' data-id='henry-v'>亨利五世</a>"
+            "（时为威尔士亲王）。</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "lydgate",
+        "name": "John Lydgate",
+        "nameZh": "约翰·利德盖特",
+        "surname": "Lydgate",
+        "given": "John",
+        "era": "late-medieval",
+        "role": "poet",
+        "birthYear": 1370,
+        "deathYear": 1451,
+        "lifespan": "c. 1370 – c. 1451",
+        "title": "Benedictine Monk · Lancastrian Laureate",
+        "titleZh": "本笃会修士 · 兰开斯特派桂冠诗人",
+        "affiliation": "Bury St Edmunds Abbey",
+        "affiliationZh": "贝里圣埃德蒙兹修道院",
+        "specialties": ["Troy Book", "Fall of Princes", "Public Poetry"],
+        "initials": "JL",
+        "sourceUrl": "https://en.wikipedia.org/wiki/John_Lydgate",
+        "bio": (
+            "<p>贝里圣埃德蒙兹修道院本笃会修士，自称乔叟传承者。其作品体量在"
+            "中古英语作家中无人能比（约 145,000 行）。<em>Troy Book</em>"
+            "（1412–20，奉亨利五世之命）将拉丁特洛伊故事英语化，是兰开斯特王"
+            "朝官方文学姿态的代表。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>Troy Book</em></strong>（1412–20，奉亨利五世命）。</li>"
+            "<li><strong><em>Fall of Princes</em></strong>（c. 1431–38，献"
+            "汉弗莱·格洛斯特公爵）。</li>"
+            "<li><em>Siege of Thebes</em>（c. 1421）。</li>"
+            "<li>众多市民庆典、王室入城（royal entry）所撰诗章。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1382</span> 入修道院学校。</div>"
+            "<div class='tl-item'><span class='tl-year'>1412–20</span> 写 <em>Troy Book</em>。</div>"
+            "<div class='tl-item'><span class='tl-year'>1432</span> 为亨利六世入城仪式撰诗。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1451</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>师承自认：<a class='rellink' data-id='chaucer'>Chaucer</a></li>"
+            "<li>赞助：<a class='rellink' data-id='henry-v'>亨利五世</a>、"
+            "<a class='rellink' data-id='henry-vi'>亨利六世</a>、汉弗莱·格洛斯特</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "henry-v",
+        "name": "Henry V",
+        "nameZh": "亨利五世",
+        "surname": "Henry V",
+        "given": "Henry",
+        "era": "late-medieval",
+        "role": "monarch",
+        "birthYear": 1386,
+        "deathYear": 1422,
+        "lifespan": "1386 – 1422",
+        "title": "King of England (1413–1422)",
+        "titleZh": "英格兰国王（1413–1422 在位）",
+        "affiliation": "House of Lancaster",
+        "affiliationZh": "兰开斯特王朝",
+        "specialties": ["Agincourt", "Chancery English", "Vernacular Statecraft"],
+        "initials": "H5",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Henry_V_of_England",
+        "bio": (
+            "<p>1415 年阿金库尔战役大胜法军，1420 年签《特鲁瓦条约》得继法国"
+            "王位。其王廷以英语取代法语作为公务文书主要用语，催生 \"Chancery "
+            "English\" 标准——是中古英语向近代英语过渡的关键政治推手。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li>推动 Chancery English 公文标准化。</li>"
+            "<li>资助 Lydgate <em>Troy Book</em>。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1413</span> 即位。</div>"
+            "<div class='tl-item'><span class='tl-year'>1415</span> 阿金库尔大捷。</div>"
+            "<div class='tl-item'><span class='tl-year'>1420</span> 《特鲁瓦条约》。</div>"
+            "<div class='tl-item'><span class='tl-year'>1422</span> 痢疾卒于法兰西。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>父：<a class='rellink' data-id='henry-iv'>亨利四世</a></li>"
+            "<li>子：<a class='rellink' data-id='henry-vi'>亨利六世</a></li>"
+            "<li>御用诗人：<a class='rellink' data-id='lydgate'>Lydgate</a>、"
+            "<a class='rellink' data-id='hoccleve'>Hoccleve</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "kempe",
+        "name": "Margery Kempe",
+        "nameZh": "玛格丽·肯普",
+        "surname": "Kempe",
+        "given": "Margery",
+        "era": "late-medieval",
+        "role": "mystic",
+        "birthYear": 1373,
+        "deathYear": 1438,
+        "lifespan": "c. 1373 – c. 1438",
+        "title": "Lay Mystic · Pilgrim",
+        "titleZh": "俗家神秘主义者 · 朝圣者",
+        "affiliation": "King's Lynn (Bishop's Lynn) · Norfolk",
+        "affiliationZh": "诺福克郡 · 国王林恩（旧称主教林恩）",
+        "specialties": ["Book of Margery Kempe", "Pilgrimage", "Lay Devotion"],
+        "initials": "MK",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Margery_Kempe",
+        "bio": (
+            "<p>富裕市民妻子、十四子之母，中年获神秘体验后开始一系列朝圣（耶"
+            "路撒冷、罗马、圣地亚哥、北欧），1413 年到诺里奇咨询朱利安。其口"
+            "述自传 <em>The Book of Margery Kempe</em> 由两位书记代笔（1436–"
+            "38 完成），是已知最早的英语自传。</p>"
+            "<p>因频繁号哭、白衣装束、公开布道而屡被疑为 Lollard，多次受审；"
+            "她最终被宣告为正统，并保留发声。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>The Book of Margery Kempe</em></strong>"
+            "（1436–38 口述定稿；唯一抄本 1934 年在英国乡间宅中重见天日）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1393</span> 嫁约翰·肯普，开始"
+            "生育十四子。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1413</span> 拜访 Julian of Norwich。</div>"
+            "<div class='tl-item'><span class='tl-year'>1414–15</span> 朝圣耶路撒冷、罗马。</div>"
+            "<div class='tl-item'><span class='tl-year'>1417</span> 莱斯特、约克受异端审判。</div>"
+            "<div class='tl-item'><span class='tl-year'>1436</span> 起口述 <em>Book</em>。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>请益对象：<a class='rellink' data-id='julian'>Julian of Norwich</a></li>"
+            "<li>受 Wycliffe 之后的 Lollard 镇压氛围波及（参 <a class='rellink' "
+            "data-id='wycliffe'>Wycliffe</a>、<a class='rellink' "
+            "data-id='henry-iv'>亨利四世</a> 焚异端法）。</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "henry-vi",
+        "name": "Henry VI",
+        "nameZh": "亨利六世",
+        "surname": "Henry VI",
+        "given": "Henry",
+        "era": "late-medieval",
+        "role": "monarch",
+        "birthYear": 1421,
+        "deathYear": 1471,
+        "lifespan": "1421 – 1471",
+        "title": "King of England (1422–61, 1470–71)",
+        "titleZh": "英格兰国王（1422–61、1470–71 两度在位）",
+        "affiliation": "House of Lancaster",
+        "affiliationZh": "兰开斯特王朝",
+        "specialties": ["Wars of the Roses", "Eton", "King's College"],
+        "initials": "H6",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Henry_VI_of_England",
+        "bio": (
+            "<p>九个月大即位，长期由摄政集团代理，成年后政事失稳。其虔诚与精"
+            "神疾病并存，1455 年起兰开斯特与约克两房争位（玫瑰战争）开打。</p>"
+            "<p>创伊顿公学（1440）与剑桥国王学院（1441），二者在中世纪晚期教"
+            "育、抄本与音乐传统中影响深远。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li>1440 创伊顿公学。</li>"
+            "<li>1441 创剑桥国王学院。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1422</span> 父亨利五世卒，襁褓即位。</div>"
+            "<div class='tl-item'><span class='tl-year'>1455</span> 玫瑰战争开始。</div>"
+            "<div class='tl-item'><span class='tl-year'>1461</span> 第一次失位。</div>"
+            "<div class='tl-item'><span class='tl-year'>1470–71</span> 短暂复位。</div>"
+            "<div class='tl-item'><span class='tl-year'>1471</span> 死于伦敦塔。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>父：<a class='rellink' data-id='henry-v'>亨利五世</a></li>"
+            "<li>御用诗人：<a class='rellink' data-id='lydgate'>Lydgate</a></li>"
+            "<li>狱友/对手时代：<a class='rellink' data-id='malory'>Malory</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "malory",
+        "name": "Sir Thomas Malory",
+        "nameZh": "托马斯·马洛礼爵士",
+        "surname": "Malory",
+        "given": "Thomas",
+        "era": "late-medieval",
+        "role": "prose-author",
+        "birthYear": 1415,
+        "deathYear": 1471,
+        "lifespan": "c. 1415 – 1471",
+        "title": "Knight · Author of Le Morte d'Arthur",
+        "titleZh": "骑士 · 《亚瑟王之死》作者",
+        "affiliation": "Newbold Revel · Warwickshire",
+        "affiliationZh": "沃里克郡 · Newbold Revel",
+        "specialties": ["Le Morte d'Arthur", "Arthurian Prose", "Caxton Edition"],
+        "initials": "TM",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Thomas_Malory",
+        "bio": (
+            "<p>研究界一般认定为沃里克郡 Newbold Revel 的骑士托马斯·马洛礼。"
+            "其人卷入抢劫、强暴、越狱多起诉讼，多年身陷伦敦塔与马歇尔西监狱，"
+            "正是在狱中（约 1469 完成）将法语 Vulgate Cycle 等亚瑟王素材融为"
+            "英语散文巨制。</p>"
+            "<p>1485 年由 Caxton 印刷出版，定名 <em>Le Morte d'Arthur</em>，"
+            "是中古英语向印刷时代过渡最重要的桥梁文本，也是后世几乎所有英语"
+            "亚瑟王再创作（Tennyson、White、Once and Future King）的源头。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>Le Morte d'Arthur</em></strong>"
+            "（1469 完稿，1485 Caxton 印行；1934 Winchester 抄本重发现）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1415</span> 生。</div>"
+            "<div class='tl-item'><span class='tl-year'>1450s</span> 多次入狱。</div>"
+            "<div class='tl-item'><span class='tl-year'>1469</span> 完成 <em>Morte</em>。</div>"
+            "<div class='tl-item'><span class='tl-year'>1471</span> 卒。</div>"
+            "<div class='tl-item'><span class='tl-year'>1485</span> Caxton 印行。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>印刷者：<a class='rellink' data-id='caxton'>William Caxton</a></li>"
+            "<li>亚瑟王脉络：<a class='rellink' data-id='layamon'>Laȝamon</a>、"
+            "<a class='rellink' data-id='pearl-poet'>Pearl Poet</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "caxton",
+        "name": "William Caxton",
+        "nameZh": "威廉·卡克斯顿",
+        "surname": "Caxton",
+        "given": "William",
+        "era": "late-medieval",
+        "role": "printer",
+        "birthYear": 1422,
+        "deathYear": 1491,
+        "lifespan": "c. 1422 – c. 1491",
+        "title": "Merchant · England's First Printer",
+        "titleZh": "商人 · 英格兰首位印刷家",
+        "affiliation": "Westminster · Sign of the Red Pale",
+        "affiliationZh": "威斯敏斯特 · 红栅栏招牌印坊",
+        "specialties": ["Print", "Le Morte d'Arthur", "Standardisation"],
+        "initials": "WC",
+        "sourceUrl": "https://en.wikipedia.org/wiki/William_Caxton",
+        "bio": (
+            "<p>肯特郡布商出身，长期居于布鲁日。在科隆习得印刷术，1473 在"
+            "布鲁日印行第一本英语印本 <em>Recuyell of the Historyes of "
+            "Troye</em>。1476 在威斯敏斯特设立英格兰第一家印刷坊。</p>"
+            "<p>其出版物覆盖乔叟（《Canterbury Tales》两版，1476/1483）、高尔、"
+            "Lydgate、Malory（1485），是中古英语作品标准化、传播加速的最关键"
+            "推手；其译序更是英语本土翻译理论的先声。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li>1473 印行 <em>Recuyell of the Historyes of Troye</em>。</li>"
+            "<li>1476 起印行 <em>Canterbury Tales</em> 两版。</li>"
+            "<li>1485 印行 <em>Le Morte d'Arthur</em>。</li>"
+            "<li>翻译 <em>The Golden Legend</em>（1483）等。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1453</span> 移居布鲁日。</div>"
+            "<div class='tl-item'><span class='tl-year'>1473</span> 布鲁日首部英语印本。</div>"
+            "<div class='tl-item'><span class='tl-year'>1476</span> 威斯敏斯特设印坊。</div>"
+            "<div class='tl-item'><span class='tl-year'>1485</span> 印行 Malory。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1491</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>承继人：Wynkyn de Worde。</li>"
+            "<li>印行：<a class='rellink' data-id='chaucer'>Chaucer</a>、"
+            "<a class='rellink' data-id='gower'>Gower</a>、"
+            "<a class='rellink' data-id='lydgate'>Lydgate</a>、"
+            "<a class='rellink' data-id='malory'>Malory</a>。</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "henryson",
+        "name": "Robert Henryson",
+        "nameZh": "罗伯特·亨里森",
+        "surname": "Henryson",
+        "given": "Robert",
+        "era": "late-medieval",
+        "role": "poet",
+        "birthYear": 1460,
+        "deathYear": 1500,
+        "lifespan": "c. 1460 – c. 1500",
+        "title": "Scottish Makar (Poet)",
+        "titleZh": "苏格兰诗人（makar）",
+        "affiliation": "Dunfermline · Fife",
+        "affiliationZh": "苏格兰法夫郡 · 邓弗姆林",
+        "specialties": ["Testament of Cresseid", "Moral Fables", "Scots Chaucerian"],
+        "initials": "RH",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Robert_Henryson",
+        "bio": (
+            "<p>苏格兰邓弗姆林本笃会修道院附属学校教师。其 <em>Testament of "
+            "Cresseid</em> 续乔叟 <em>Troilus and Criseyde</em>，让 Cresseid 染"
+            "麻风病、残年悔愧；以严密节制的押韵八行诗（rhyme royal 与 stanza"
+            "of seven）写就，长期被印刷家收入乔叟集子，几被误读为乔叟续作。</p>"
+            "<p>其 <em>Morall Fabillis</em> 把伊索寓言改造为苏格兰社会评论。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>The Testament of Cresseid</em></strong>。</li>"
+            "<li><strong><em>The Morall Fabillis of Esope the Phrygian</em></strong>。</li>"
+            "<li><em>Orpheus and Eurydice</em>。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>c.1460</span> 推断从教于邓弗姆林。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1490s</span> 创作高峰。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1500</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>续作对象：<a class='rellink' data-id='chaucer'>Chaucer</a></li>"
+            "<li>苏格兰 makar 同代：<a class='rellink' data-id='dunbar'>Dunbar</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "dunbar",
+        "name": "William Dunbar",
+        "nameZh": "威廉·邓巴",
+        "surname": "Dunbar",
+        "given": "William",
+        "era": "tudor",
+        "role": "poet",
+        "birthYear": 1460,
+        "deathYear": 1520,
+        "lifespan": "c. 1460 – c. 1520",
+        "title": "Scottish Makar at the Court of James IV",
+        "titleZh": "詹姆斯四世宫廷苏格兰诗人",
+        "affiliation": "Court of James IV · Edinburgh",
+        "affiliationZh": "苏格兰詹姆斯四世宫廷 · 爱丁堡",
+        "specialties": ["Lament for the Makaris", "Court Satire", "Scots"],
+        "initials": "WD",
+        "sourceUrl": "https://en.wikipedia.org/wiki/William_Dunbar",
+        "bio": (
+            "<p>苏格兰詹姆斯四世宫廷诗人，1500–1513 年间领有王室年金。其作品"
+            "题材跨度极大：宫廷讽刺、宗教挽歌、街头辱骂诗（flyting）、爱情奇"
+            "幻——是苏格兰中古英语 makar 传统最华彩的一段。</p>"
+            "<p><em>Lament for the Makaris</em>（约 1505）以拉丁副歌 \"timor "
+            "mortis conturbat me\" 串起一长串已逝苏格兰、英格兰诗人，是研究中"
+            "世纪不列颠诗人自我意识的关键文献。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><strong><em>Lament for the Makaris</em></strong>（c. 1505）。</li>"
+            "<li><em>The Goldyn Targe</em>。</li>"
+            "<li><em>The Tretis of the Tua Mariit Wemen and the Wedo</em>。</li>"
+            "<li><em>Flyting of Dunbar and Kennedy</em>。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1500</span> 入詹姆斯四世王廷。</div>"
+            "<div class='tl-item'><span class='tl-year'>1513</span> Flodden 战役后王室年金停发。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1520</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>挽歌中纪念：<a class='rellink' data-id='chaucer'>Chaucer</a>、"
+            "<a class='rellink' data-id='gower'>Gower</a>、"
+            "<a class='rellink' data-id='lydgate'>Lydgate</a>、"
+            "<a class='rellink' data-id='henryson'>Henryson</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "henry-vii",
+        "name": "Henry VII",
+        "nameZh": "亨利七世",
+        "surname": "Henry VII",
+        "given": "Henry",
+        "era": "tudor",
+        "role": "monarch",
+        "birthYear": 1457,
+        "deathYear": 1509,
+        "lifespan": "1457 – 1509",
+        "title": "King of England (1485–1509)",
+        "titleZh": "英格兰国王（1485–1509 在位）",
+        "affiliation": "House of Tudor",
+        "affiliationZh": "都铎王朝",
+        "specialties": ["Bosworth", "Tudor Dynasty", "Court of Star Chamber"],
+        "initials": "H7",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Henry_VII_of_England",
+        "bio": (
+            "<p>1485 年博斯沃斯战役击败理查三世，开都铎王朝。婚约克的伊丽莎白，"
+            "结束玫瑰战争。其王权重建依赖税务铁腕与宫廷律法（Star Chamber），"
+            "为子亨利八世留下殷实国库。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li>1485 加冕。</li>"
+            "<li>巩固星室法庭审判机制。</li>"
+            "<li>资助 Cabot 1497 跨大西洋探险。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1485</span> 博斯沃斯击败理查三世。</div>"
+            "<div class='tl-item'><span class='tl-year'>1486</span> 与约克的伊丽莎白成婚。</div>"
+            "<div class='tl-item'><span class='tl-year'>1497</span> 资助 Cabot 北美探险。</div>"
+            "<div class='tl-item'><span class='tl-year'>1509</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>子：<a class='rellink' data-id='henry-viii'>亨利八世</a></li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "skelton",
+        "name": "John Skelton",
+        "nameZh": "约翰·斯凯尔顿",
+        "surname": "Skelton",
+        "given": "John",
+        "era": "tudor",
+        "role": "poet",
+        "birthYear": 1463,
+        "deathYear": 1529,
+        "lifespan": "c. 1463 – 1529",
+        "title": "Poet Laureate · Tutor to Henry VIII",
+        "titleZh": "桂冠诗人 · 亨利八世幼年导师",
+        "affiliation": "Royal Tutor · Diss (Norfolk)",
+        "affiliationZh": "王室教师 · 诺福克郡 Diss 教区",
+        "specialties": ["Skeltonics", "Wolsey Satire", "Eulogies"],
+        "initials": "JS",
+        "sourceUrl": "https://en.wikipedia.org/wiki/John_Skelton",
+        "bio": (
+            "<p>剑桥与牛津双授桂冠诗人称号，亨利八世幼年的拉丁与诗艺导师。"
+            "晚年退居诺福克 Diss 任司铎，仍以 \"Skeltonics\"——短行、密韵、"
+            "口语化——风格大量产出讽刺诗，矛头直指红衣主教沃尔西。</p>"
+            "<p>其语言介于 Caxton 时代英语与早期现代英语之间，是中古英语向"
+            "莎士比亚时代过渡的重要一环。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><em>The Bowge of Courte</em>（c. 1499）。</li>"
+            "<li><em>Phyllyp Sparowe</em>。</li>"
+            "<li><em>Speke, Parott</em>、<em>Collyn Clout</em>、"
+            "<em>Why Come Ye Nat to Courte?</em>（反沃尔西三部曲）。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1488</span> 牛津授桂冠。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1496–1502</span> 任亨利王子（即未来"
+            "亨利八世）导师。</div>"
+            "<div class='tl-item'><span class='tl-year'>c.1521–22</span> 写反沃尔西三部曲。</div>"
+            "<div class='tl-item'><span class='tl-year'>1529</span> 卒于威斯敏斯特避难所。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>学生：<a class='rellink' data-id='henry-viii'>亨利八世</a></li>"
+            "<li>讽刺对象：托马斯·沃尔西红衣主教</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+    {
+        "id": "henry-viii",
+        "name": "Henry VIII",
+        "nameZh": "亨利八世",
+        "surname": "Henry VIII",
+        "given": "Henry",
+        "era": "tudor",
+        "role": "monarch",
+        "birthYear": 1491,
+        "deathYear": 1547,
+        "lifespan": "1491 – 1547",
+        "title": "King of England (1509–1547)",
+        "titleZh": "英格兰国王（1509–1547 在位）",
+        "affiliation": "House of Tudor",
+        "affiliationZh": "都铎王朝",
+        "specialties": ["Reformation", "Dissolution of Monasteries", "Six Wives"],
+        "initials": "H8",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Henry_VIII",
+        "bio": (
+            "<p>少年亨利受教于 Skelton，登基初期被视为文艺复兴 \"君子王\" 的"
+            "化身——精通拉丁、神学、音乐，并亲撰反路德教皇辩护文。1530 年代起"
+            "因离婚案与罗马决裂，1534 年《最高权力法案》宣布国王为英国教会"
+            "之首。</p>"
+            "<p>1536–41 年的解散修道院（Dissolution of the Monasteries）将"
+            "中古英国宗教—文化生态彻底重塑，无数手抄本与圣物散佚或毁灭，是"
+            "中世纪英国结束的标志性事件。</p>"
+        ),
+        "works": (
+            "<ul>"
+            "<li><em>Assertio Septem Sacramentorum</em>（1521，反路德辩护，"
+            "教皇赐 \"信仰的捍卫者\" 称号）。</li>"
+            "<li>1534 年《最高权力法案》（Act of Supremacy）。</li>"
+            "<li>1536–41 解散修道院。</li>"
+            "</ul>"
+        ),
+        "events": (
+            "<div class='timeline'>"
+            "<div class='tl-item'><span class='tl-year'>1509</span> 即位，娶阿拉贡的凯瑟琳。</div>"
+            "<div class='tl-item'><span class='tl-year'>1521</span> 撰反路德文，获 \"信仰的捍卫者\" 衔。</div>"
+            "<div class='tl-item'><span class='tl-year'>1534</span> 《最高权力法案》。</div>"
+            "<div class='tl-item'><span class='tl-year'>1536–41</span> 解散修道院。</div>"
+            "<div class='tl-item'><span class='tl-year'>1547</span> 卒。</div>"
+            "</div>"
+        ),
+        "relations": (
+            "<ul>"
+            "<li>父：<a class='rellink' data-id='henry-vii'>亨利七世</a></li>"
+            "<li>幼年导师：<a class='rellink' data-id='skelton'>Skelton</a></li>"
+            "<li>解散修道院重创：<a class='rellink' data-id='lydgate'>Lydgate</a> "
+            "所属贝里圣埃德蒙兹等。</li>"
+            "</ul>"
+        ),
+        "notes": "",
+    },
+]
+
+# ---------------------------------------------------------------------------
+# RENDER
+# ---------------------------------------------------------------------------
+
+# Era / role labels (for chips & sort buckets)
+ERA_LABELS = {
+    "early-medieval": ("早期中世纪", "Early Medieval", "1100–1250"),
+    "high-medieval":  ("中世纪盛期", "High Medieval", "1250–1400"),
+    "late-medieval":  ("中世纪晚期", "Late Medieval", "1400–1485"),
+    "tudor":          ("都铎早期",   "Early Tudor",   "1485–1547"),
+}
+ROLE_LABELS = {
+    "monarch":      ("君主", "Monarch"),
+    "poet":         ("诗人", "Poet"),
+    "prose-author": ("散文家", "Prose Author"),
+    "chronicler":   ("编年史家", "Chronicler"),
+    "mystic":       ("神秘主义者", "Mystic"),
+    "prelate":      ("教士", "Prelate"),
+    "printer":      ("印刷家", "Printer"),
+}
+KIND_LABELS = {
+    "figure": ("人物", "Figure"),
+    "event":  ("事件", "Event"),
+    "place":  ("地点", "Place"),
+    "term":   ("术语", "Term"),
+}
+
+# Default photoPos / thumbPos / thumbZoom for figures w/o image
+for f in FIGURES:
+    f.setdefault("photo", "")
+    f.setdefault("photoPos", "50% 30%")
+    f.setdefault("thumbPos", "50% 35%")
+    f.setdefault("thumbZoom", "1")
+    f.setdefault("notes", "")
+    f.setdefault("kind", "figure")
+
+count = len(FIGURES)
+seed_json = json.dumps(FIGURES, ensure_ascii=False, indent=2)
+
+CSS = r"""
+:root{
+  --berkeley-blue:#003262;
+  --berkeley-gold:#FDB515;
+  --parchment:#f6f0e3;
+  --parchment-2:#efe6d2;
+  --ink:#1c1812;
+  --ink-soft:#3d3528;
+  --rule:#cbbe9f;
+  --accent:#7c1d1d;
+  --shadow:0 6px 24px rgba(28,24,18,.10), 0 2px 6px rgba(28,24,18,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'EB Garamond',Georgia,serif;
+  color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 0% -10%, rgba(0,50,98,.07), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(253,181,21,.08), transparent 55%),
+    var(--parchment);
+  min-height:100vh; line-height:1.65; font-size:18px;
+}
+header.site{
+  position:sticky; top:0; z-index:30;
+  background:linear-gradient(180deg, var(--berkeley-blue) 0%, #00254a 100%);
+  color:#fff; border-bottom:3px solid var(--berkeley-gold);
+  padding:10px 24px; display:flex; align-items:center; justify-content:space-between;
+  gap:14px; font-family:'Inter',sans-serif; flex-wrap:wrap;
+}
+header.site .brand{display:flex; align-items:center; gap:14px}
+header.site .crest{
+  width:42px;height:42px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, var(--berkeley-gold), #b07e0a 80%);
+  display:grid;place-items:center; color:#001a33; font-weight:800;
+  font-family:'EB Garamond',serif; font-size:22px;
+  box-shadow:inset 0 0 0 2px #fff3, 0 2px 4px rgba(0,0,0,.3);
+}
+header.site h1{margin:0; font-family:'EB Garamond',serif; font-weight:600; font-size:21px}
+header.site .sub{font-size:11px; opacity:.85; letter-spacing:1.5px; text-transform:uppercase}
+.toolbar{display:flex; gap:8px; align-items:center; font-size:12px; flex-wrap:wrap}
+.toolbar .savebadge{padding:5px 11px; border-radius:14px; background:#0a4f8c; color:#cfe7ff; font-size:11px; letter-spacing:.5px}
+.toolbar .savebadge.saving{background:#7c5e00; color:#fff3c2}
+.toolbar .savebadge.saved{background:#1f6b3a; color:#d6f3df}
+.toolbar button{
+  background:transparent; color:#fff; border:1px solid #ffffff44;
+  padding:5px 10px; border-radius:6px; cursor:pointer;
+  font-family:'Inter',sans-serif; font-size:11px; letter-spacing:.5px;
+}
+.toolbar button:hover{background:#ffffff14; border-color:var(--berkeley-gold)}
+
+.layout{
+  display:grid; grid-template-columns: 340px 1fr; gap:22px;
+  max-width:1380px; margin: 18px auto; padding: 0 22px 60px;
+}
+
+aside.directory{
+  position:sticky; top:80px; align-self:start;
+  height: calc(100vh - 100px);
+  display:flex; flex-direction:column;
+  background:linear-gradient(180deg, #fffdf8, #fbf5e6);
+  border:1px solid var(--rule);
+  border-radius:10px;
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+aside.directory > h2{
+  margin:0; padding:12px 16px;
+  font-family:'EB Garamond',serif;
+  font-size:14px; letter-spacing:1.5px; text-transform:uppercase;
+  color:#fff; background:var(--berkeley-blue);
+  border-bottom:2px solid var(--berkeley-gold);
+  display:flex; justify-content:space-between; align-items:center;
+}
+aside.directory > h2 small{font-size:11px; opacity:.85; letter-spacing:1px}
+
+.controls{
+  padding:10px 12px; border-bottom:1px solid var(--rule);
+  background:#fff8e8; display:grid; gap:8px;
+  font-family:'Inter',sans-serif;
+}
+.controls .row{display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center}
+.controls label{font-size:11px; letter-spacing:1px; text-transform:uppercase; color:#6b5d3d}
+.controls select, .controls input[type=search]{
+  width:100%; padding:6px 8px;
+  border:1px solid var(--rule); background:#fffdf8; border-radius:5px;
+  font-family:inherit; font-size:13px; color:var(--ink);
+}
+.controls select:focus, .controls input:focus{outline:2px solid var(--berkeley-gold); outline-offset:1px}
+.dirbtn{
+  padding:6px 10px; border:1px solid var(--rule); background:#fffdf8;
+  border-radius:5px; cursor:pointer; font-family:inherit; font-size:12px;
+  min-width:34px; user-select:none;
+}
+.dirbtn:hover{background:#fff3cb; border-color:var(--berkeley-gold)}
+.dirbtn[data-dir="desc"] .a{display:none}
+.dirbtn[data-dir="asc"]  .b{display:none}
+.chips{display:flex; gap:4px; flex-wrap:wrap; margin-top:2px}
+.chip{
+  padding:2px 8px; font-size:11px; border-radius:11px;
+  background:#fff; border:1px solid var(--rule); cursor:pointer; color:var(--ink-soft);
+}
+.chip.active{background:var(--berkeley-blue); color:#fff; border-color:var(--berkeley-blue)}
+
+ul.faculty{list-style:none; margin:0; padding:6px; overflow-y:auto; flex:1}
+ul.faculty::-webkit-scrollbar{width:8px}
+ul.faculty::-webkit-scrollbar-thumb{background:#cbbe9f88; border-radius:4px}
+ul.faculty::-webkit-scrollbar-thumb:hover{background:#cbbe9f}
+
+.group-header{
+  margin: 6px 4px 2px; padding: 4px 10px;
+  font-family:'Inter',sans-serif; font-size:10px; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--berkeley-blue);
+  border-bottom:1px solid var(--rule);
+}
+
+.card{
+  display:grid; grid-template-columns: 56px 1fr; gap:10px;
+  padding:10px; border-radius:8px; cursor:pointer;
+  border:1px solid transparent;
+  transition: all .15s ease; align-items:center; margin-bottom:2px;
+}
+.card:hover{background:#fff; border-color:var(--rule); transform:translateY(-1px)}
+.card.active{background:#fffaee; border-color:var(--berkeley-gold); box-shadow:0 0 0 1px var(--berkeley-gold) inset}
+.card .photo{
+  width:56px; height:56px; border-radius:50%;
+  background:#dccfa8; overflow:hidden;
+  display:grid; place-items:center;
+  color:#fff; font-weight:600; font-size:18px;
+  border:2px solid #fff; box-shadow: 0 0 0 1px var(--rule);
+  font-family:'Inter',sans-serif;
+}
+.card .photo img{
+  width:100%; height:100%; object-fit:cover;
+  object-position:var(--pos, 50% 35%);
+  transform:scale(var(--zoom, 1));
+  transform-origin:var(--pos, 50% 35%);
+  display:block;
+}
+.card .meta .name{
+  font-family:'EB Garamond',serif; font-weight:600; font-size:16px;
+  color:var(--ink); line-height:1.2;
+}
+.card .meta .sub{font-size:12px; color:var(--ink-soft); margin-top:1px; font-family:'Inter',sans-serif}
+.card .meta .age{
+  font-size:11px; color:#6b5d3d; font-family:'Inter',sans-serif; margin-top:3px;
+  display:inline-block; background:#f3e9c8; padding:1px 7px; border-radius:10px;
+}
+.card .meta .role{
+  font-size:10px; letter-spacing:1px; text-transform:uppercase;
+  color:var(--accent); margin-top:3px; font-family:'Inter',sans-serif;
+}
+.card .meta .role.empty{color:#9e8b5d}
+
+main.profile{
+  background:#fffdf8; border:1px solid var(--rule); border-radius:10px;
+  box-shadow: var(--shadow); overflow:hidden;
+}
+.hero{
+  display:grid; grid-template-columns: 200px 1fr; gap:26px;
+  padding:24px 30px 20px;
+  border-bottom:1px solid var(--rule);
+  background:linear-gradient(180deg, #fffaeb 0%, #fffdf8 80%);
+  position:relative;
+}
+.hero::after{
+  content:""; position:absolute; left:30px; right:30px; bottom:-1px; height:2px;
+  background:linear-gradient(90deg, var(--berkeley-blue), var(--berkeley-gold));
+}
+.hero .portrait{
+  width:200px; height:260px;
+  background:#dccfa8; border-radius:6px; overflow:hidden;
+  box-shadow: 0 8px 18px rgba(0,0,0,.15);
+  border:1px solid var(--rule); position:relative;
+}
+.hero .portrait img{width:100%; height:100%; object-fit:cover; object-position:var(--pos, 50% 30%); display:block}
+.hero .portrait .photoplaceholder{
+  width:100%; height:100%; display:grid; place-items:center;
+  background:linear-gradient(135deg, #003262, #00254a);
+  color:#FDB515; font-family:Inter,sans-serif; font-size:64px; font-weight:600;
+}
+.hero .portrait .photoedit{
+  position:absolute; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,.7); color:#fff;
+  padding:5px 8px; font-size:10px; font-family:Inter,sans-serif;
+  text-align:center; cursor:text; opacity:0; transition:opacity .15s;
+  word-break:break-all;
+}
+.hero .portrait:hover .photoedit{opacity:1}
+.hero h1[contenteditable]{outline:none}
+.hero h1{
+  margin:0 0 4px; font-family:'EB Garamond',serif;
+  font-weight:600; font-size:38px; color:var(--berkeley-blue);
+}
+.hero .title-line{font-style:italic; color:var(--ink-soft); font-size:18px; margin-bottom:10px}
+.factgrid{
+  display:grid; grid-template-columns: repeat(2, 1fr);
+  gap:6px 24px; margin:10px 0 8px;
+  font-family:'Inter',sans-serif; font-size:13px;
+}
+.factgrid .lbl{
+  text-transform:uppercase; letter-spacing:1.2px;
+  color:#6b5d3d; font-size:10px; font-weight:600;
+}
+.factgrid .val{color:var(--ink); font-size:14px; min-height:18px}
+.factgrid .val a{color:var(--berkeley-blue); text-decoration:none; border-bottom:1px solid #c5d4e3}
+.tags{margin-top:6px}
+.tag{
+  display:inline-block; background:var(--berkeley-blue); color:#fff;
+  padding:2px 9px; border-radius:13px;
+  font-family:'Inter',sans-serif; font-size:11px;
+  margin-right:6px; margin-bottom:6px; letter-spacing:.5px;
+}
+.tag.gold{background:var(--berkeley-gold); color:#3d2900}
+
+.sectionnav{
+  display:flex; gap:0; flex-wrap:wrap;
+  padding: 0 30px;
+  background:#fbf5e6; border-bottom:1px solid var(--rule);
+  font-family:'Inter',sans-serif;
+  font-size:12px; letter-spacing:.5px; text-transform:uppercase;
+  position:sticky; top:64px; z-index:10;
+}
+.sectionnav a{
+  padding:12px 13px; color:var(--ink-soft);
+  text-decoration:none; border-bottom:3px solid transparent;
+  transition: all .15s; cursor:pointer;
+}
+.sectionnav a:hover{color:var(--berkeley-blue)}
+.sectionnav a.active{color:var(--berkeley-blue); border-bottom-color:var(--berkeley-gold); font-weight:600}
+
+.body{padding:24px 32px 32px}
+.body section{margin-bottom:30px; scroll-margin-top:140px}
+.body h2{
+  font-family:'EB Garamond',serif;
+  font-size:23px; font-weight:600;
+  color:var(--berkeley-blue);
+  margin:0 0 12px; padding-bottom:5px;
+  border-bottom:2px solid var(--berkeley-gold);
+  display:flex; align-items:baseline; gap:12px; justify-content:space-between;
+}
+.body h2 .left{display:flex; align-items:baseline; gap:10px}
+.body h2 .en{
+  font-size:13px; font-weight:400; font-style:italic;
+  color:var(--ink-soft); letter-spacing:1px;
+  font-family:'EB Garamond',serif;
+}
+.body h2 .clear{
+  font-family:Inter,sans-serif; font-size:11px;
+  color:#9e8b5d; cursor:pointer; opacity:0;
+  transition:opacity .15s; border:none; background:none;
+  padding:2px 8px; border-radius:4px;
+}
+.body section:hover h2 .clear{opacity:1}
+.body h2 .clear:hover{color:#7c1d1d; background:#fff5e8}
+
+[contenteditable="true"]{outline:none; transition: background .15s, box-shadow .15s; border-radius:4px}
+[contenteditable="true"]:hover{background:#fff8e1cc}
+[contenteditable="true"]:focus{background:#fffbeb; box-shadow:0 0 0 2px var(--berkeley-gold)}
+[contenteditable="true"]:empty::before{
+  content: attr(data-placeholder);
+  color:#a99770; font-style:italic; pointer-events:none;
+}
+.editable{
+  min-height:60px; padding:10px 12px; margin:0 -12px;
+  border:1px dashed transparent;
+}
+.editable:hover{border-color:#e2d4a8}
+.editable:focus{border-color:var(--berkeley-gold)}
+.editable p:first-child{margin-top:0}
+.editable p:last-child{margin-bottom:0}
+
+.inline-edit{
+  display:inline-block; min-width:60px;
+  padding:1px 4px; margin:-1px -4px; border-radius:3px;
+}
+.inline-edit:hover{background:#fff8e1}
+.inline-edit:focus{background:#fffbeb; box-shadow:0 0 0 2px var(--berkeley-gold)}
+
+.pullquote{
+  border-left:4px solid var(--berkeley-gold);
+  padding:8px 18px; margin:18px 0;
+  background:#fff8e1; font-style:italic; color:var(--ink-soft);
+}
+.timeline{
+  margin:14px 0 6px;
+  border-left:3px solid var(--berkeley-gold);
+  padding-left:18px;
+}
+.tl-item{
+  position:relative;
+  margin:0 0 13px;
+  padding:0 0 0 14px;
+}
+.tl-item::before{
+  content:""; position:absolute; left:-25px; top:.55em;
+  width:11px; height:11px; border-radius:50%;
+  background:#fffdf8;
+  border:2px solid var(--berkeley-blue);
+  box-shadow:0 0 0 3px #fffdf8;
+}
+.tl-year{
+  display:inline-block; min-width:82px;
+  font-family:Inter,sans-serif; font-size:12px;
+  font-weight:700; color:#7c1d1d; letter-spacing:.3px;
+}
+.rellink{
+  color:var(--berkeley-blue); cursor:pointer;
+  text-decoration:none; border-bottom:1px solid #c5d4e3;
+  font-weight:500;
+}
+.rellink:hover{background:#fff8e1}
+
+footer.site{
+  text-align:center; color:var(--ink-soft);
+  font-family:'Inter',sans-serif; font-size:12px;
+  padding:20px 16px 36px; line-height:1.7;
+}
+footer.site .brule{
+  width:80px; height:2px;
+  background:linear-gradient(90deg, var(--berkeley-blue), var(--berkeley-gold));
+  margin:0 auto 12px;
+}
+
+/* ---- New-entry form & user badge ---- */
+.toolbtn{
+  background:var(--berkeley-gold); color:#3d2900;
+  border:none; padding:3px 10px; border-radius:11px; cursor:pointer;
+  font-family:'Inter',sans-serif; font-size:11px; font-weight:600;
+  letter-spacing:.3px;
+}
+.toolbtn:hover{background:#ffd14a}
+.toolbtn.danger{background:#7c1d1d; color:#fff}
+.toolbtn.danger:hover{background:#a02a2a}
+.toolbtn.ghost{background:transparent; color:var(--berkeley-blue); border:1px solid var(--rule)}
+.toolbtn.ghost:hover{background:#fff8e1; border-color:var(--berkeley-gold)}
+
+.adddialog{
+  background:#fffbeb; border:1px solid var(--berkeley-gold);
+  padding:10px 12px; border-radius:6px; margin-top:6px;
+  display:none; flex-direction:column; gap:6px;
+  font-family:'Inter',sans-serif;
+}
+.adddialog.open{display:flex}
+.adddialog .head{
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--berkeley-blue); font-weight:600;
+}
+.adddialog input[type=text], .adddialog select, .adddialog textarea{
+  width:100%; padding:5px 7px;
+  border:1px solid var(--rule); background:#fff; border-radius:4px;
+  font-family:inherit; font-size:13px; color:var(--ink);
+}
+.adddialog textarea{min-height:46px; resize:vertical; line-height:1.4}
+.adddialog input:focus, .adddialog select:focus, .adddialog textarea:focus{
+  outline:2px solid var(--berkeley-gold); outline-offset:1px
+}
+.adddialog .grid2{display:grid; grid-template-columns:1fr 1fr; gap:6px}
+.adddialog .lab{font-size:10px; color:#6b5d3d; text-transform:uppercase; letter-spacing:.8px; margin-bottom:1px}
+.adddialog .actions{display:flex; gap:6px; justify-content:flex-end; margin-top:4px}
+
+.kindrow .chip{padding:3px 9px}
+.kindrow .chip[data-kind="figure"].active{background:var(--berkeley-blue)}
+.kindrow .chip[data-kind="event"].active{background:#7c1d1d; border-color:#7c1d1d}
+.kindrow .chip[data-kind="place"].active{background:#1f6b3a; border-color:#1f6b3a}
+.kindrow .chip[data-kind="term"].active{background:#5a4a99; border-color:#5a4a99}
+
+.card .userbadge{
+  display:inline-block; background:var(--berkeley-gold); color:#3d2900;
+  padding:0 6px; border-radius:8px; font-size:9px; font-weight:700;
+  letter-spacing:.5px; text-transform:uppercase;
+  font-family:'Inter',sans-serif; margin-left:5px;
+}
+.card .kindbadge{
+  display:inline-block; padding:0 6px; border-radius:8px;
+  font-size:9px; font-weight:700; letter-spacing:.5px;
+  font-family:'Inter',sans-serif; margin-right:4px;
+  background:#e7d9b3; color:#5a4500;
+}
+.card .kindbadge.event{background:#f3d6d6; color:#7c1d1d}
+.card .kindbadge.place{background:#d6efd9; color:#1f6b3a}
+.card .kindbadge.term {background:#dfd6f0; color:#3a2a85}
+
+.entrytools{
+  display:flex; gap:6px; padding:14px 30px 0; align-items:center;
+  font-family:'Inter',sans-serif; font-size:11px; color:#6b5d3d;
+}
+
+@media (max-width: 920px){
+  .layout{grid-template-columns: 1fr}
+  aside.directory{position:static; height:auto; max-height:60vh}
+  .hero{grid-template-columns: 1fr; padding:20px}
+  .hero .portrait{width:140px; height:180px; margin:0 auto}
+  .hero h1{font-size:28px; text-align:center}
+  .hero .title-line{text-align:center}
+  .factgrid{grid-template-columns:1fr}
+  .body{padding:22px 18px 26px}
+  .sectionnav{padding:0 12px; overflow-x:auto; flex-wrap:nowrap; white-space:nowrap; top:60px}
+  header.site{padding:8px 14px}
+}
+"""
+
+ERA_CHIP_HTML = "\n".join(
+    f'<span class="chip" data-era="{k}" title="{en} · {span}">{cn}</span>'
+    for k, (cn, en, span) in ERA_LABELS.items()
+)
+ROLE_CHIP_HTML = "\n".join(
+    f'<span class="chip" data-role="{k}" title="{en}">{cn}</span>'
+    for k, (cn, en) in ROLE_LABELS.items()
+)
+
+HTML = f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>中世纪英国历史人物目录 | Middle English Historical Figures</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>{CSS}</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="brand">
+    <div class="crest">H</div>
+    <div>
+      <h1>中世纪英国历史人物目录</h1>
+      <div class="sub">Middle English Historical Figures · 作家 · 君主 · 神秘主义者 · 印刷家</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <span class="savebadge" id="savebadge">已保存</span>
+    <button id="resetCurrent">重置当前</button>
+    <button id="exportBtn">导出备份</button>
+    <button id="importBtn">导入</button>
+    <input type="file" id="importFile" style="display:none" accept="application/json"/>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="directory" aria-label="人物目录">
+    <h2>条目目录 <small><span id="countBadge">{count} 位</span> &nbsp; <button class="toolbtn" id="addBtn">+ 新建</button></small></h2>
+
+    <div class="controls">
+      <input id="q" type="search" placeholder="按姓名 / 头衔 / 关键词过滤…" />
+
+      <div class="row">
+        <div>
+          <label>排序方式 · Sort by</label>
+          <select id="sortKey">
+            <option value="birthYear" selected>年代 (Year)</option>
+            <option value="surname">姓氏 / 名称 (Name A→Z)</option>
+            <option value="given">名 (Given)</option>
+            <option value="era">时代 (Era)</option>
+            <option value="role">身份 (Role)</option>
+            <option value="kind">类型 (Kind)</option>
+          </select>
+        </div>
+        <div>
+          <label>方向</label>
+          <button class="dirbtn" id="sortDir" data-dir="asc" title="正序 / 倒序"><span class="a">↑ 升</span><span class="b">↓ 降</span></button>
+        </div>
+      </div>
+
+      <div>
+        <label>按类型筛选 · Kind</label>
+        <div class="chips kindrow" id="kindChips">
+          <span class="chip active" data-kind="">全部</span>
+          <span class="chip" data-kind="figure">人物</span>
+          <span class="chip" data-kind="event">事件</span>
+          <span class="chip" data-kind="place">地点</span>
+          <span class="chip" data-kind="term">术语</span>
+        </div>
+      </div>
+
+      <div>
+        <label>按时代筛选 · Era</label>
+        <div class="chips" id="eraChips">
+          <span class="chip active" data-era="">全部</span>
+{ERA_CHIP_HTML}
+        </div>
+      </div>
+
+      <div>
+        <label>按身份筛选 · Role <span style="color:#a99770;text-transform:none;letter-spacing:0">(仅人物)</span></label>
+        <div class="chips" id="roleChips">
+          <span class="chip active" data-role="">全部</span>
+{ROLE_CHIP_HTML}
+        </div>
+      </div>
+
+      <div class="adddialog" id="addDialog">
+        <div class="head"><span>新建条目 · New Entry</span><button type="button" class="toolbtn ghost" id="addClose">×</button></div>
+        <div>
+          <div class="lab">类型 · Kind</div>
+          <select id="addKind">
+            <option value="figure">人物 Figure</option>
+            <option value="event">事件 Event</option>
+            <option value="place">地点 Place</option>
+            <option value="term">术语 Term</option>
+          </select>
+        </div>
+        <div class="grid2">
+          <div>
+            <div class="lab">名称 (英) · Name</div>
+            <input type="text" id="addName" placeholder="e.g. Geoffrey Chaucer">
+          </div>
+          <div>
+            <div class="lab">中文名 · Name (zh)</div>
+            <input type="text" id="addNameZh" placeholder="例：杰弗里·乔叟">
+          </div>
+        </div>
+        <div class="grid2">
+          <div>
+            <div class="lab">起始年 · Year (start)</div>
+            <input type="text" id="addYearStart" placeholder="例：1343 或 c.1343">
+          </div>
+          <div>
+            <div class="lab">终止年 · Year (end)</div>
+            <input type="text" id="addYearEnd" placeholder="例：1400 或留空">
+          </div>
+        </div>
+        <div class="grid2">
+          <div>
+            <div class="lab">时代 · Era</div>
+            <select id="addEra">
+              <option value="">— 选择 —</option>
+              <option value="early-medieval">早期中世纪 1100–1250</option>
+              <option value="high-medieval">中世纪盛期 1250–1400</option>
+              <option value="late-medieval">中世纪晚期 1400–1485</option>
+              <option value="tudor">都铎早期 1485–1547</option>
+            </select>
+          </div>
+          <div>
+            <div class="lab">身份 · Role <span style="color:#a99770">(仅人物)</span></div>
+            <select id="addRole">
+              <option value="">— 选择 —</option>
+              <option value="monarch">君主 Monarch</option>
+              <option value="poet">诗人 Poet</option>
+              <option value="prose-author">散文家 Prose Author</option>
+              <option value="chronicler">编年史家 Chronicler</option>
+              <option value="mystic">神秘主义者 Mystic</option>
+              <option value="prelate">教士 Prelate</option>
+              <option value="printer">印刷家 Printer</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="lab">头衔 / 简介短语 · Title</div>
+          <input type="text" id="addTitle" placeholder="例：Court Poet · Father of English Poetry">
+        </div>
+        <div>
+          <div class="lab">概述 · Summary</div>
+          <textarea id="addSummary" placeholder="一两句话简介，可在新建后继续在右侧详情编辑…"></textarea>
+        </div>
+        <div>
+          <div class="lab">参考链接 · Source URL</div>
+          <input type="text" id="addUrl" placeholder="https://en.wikipedia.org/wiki/...">
+        </div>
+        <div class="actions">
+          <button type="button" class="toolbtn ghost" id="addCancel">取消</button>
+          <button type="button" class="toolbtn" id="addSave">保存并打开</button>
+        </div>
+      </div>
+    </div>
+
+    <ul class="faculty" id="figureList"></ul>
+  </aside>
+
+  <main class="profile" id="profile"></main>
+
+</div>
+
+<footer class="site">
+  <div class="brule"></div>
+  本站资料整理自 Wikipedia、Britannica、ODNB、各人物作品序跋及现代权威研究综述。
+  所有数据可在右侧面板内联编辑，覆盖项保存于浏览器 localStorage（导出可备份）。
+  <br/>本站为 Berkeley 蓝金 + 羊皮纸视觉的中古英语主题二代版本，沿用 cf-deploy 风格。
+</footer>
+
+<script>
+/* =========================================================
+   FIGURES — Middle English period & adjacent personages
+   ========================================================= */
+const FIGURES_SEED = {seed_json};
+
+const ERA_LABEL = {{
+  "early-medieval": ["早期中世纪", "Early Medieval", "1100–1250"],
+  "high-medieval":  ["中世纪盛期", "High Medieval", "1250–1400"],
+  "late-medieval":  ["中世纪晚期", "Late Medieval", "1400–1485"],
+  "tudor":          ["都铎早期",   "Early Tudor",   "1485–1547"],
+}};
+const ROLE_LABEL = {{
+  "monarch":      ["君主", "Monarch"],
+  "poet":         ["诗人", "Poet"],
+  "prose-author": ["散文家", "Prose Author"],
+  "chronicler":   ["编年史家", "Chronicler"],
+  "mystic":       ["神秘主义者", "Mystic"],
+  "prelate":      ["教士", "Prelate"],
+  "printer":      ["印刷家", "Printer"],
+}};
+const KIND_LABEL = {{
+  "figure": ["人物", "Figure"],
+  "event":  ["事件", "Event"],
+  "place":  ["地点", "Place"],
+  "term":   ["术语", "Term"],
+}};
+const ERA_ORDER  = {{"early-medieval":0, "high-medieval":1, "late-medieval":2, "tudor":3}};
+const ROLE_ORDER = {{"monarch":0, "poet":1, "prose-author":2, "chronicler":3, "mystic":4, "prelate":5, "printer":6}};
+const KIND_ORDER = {{"figure":0, "event":1, "place":2, "term":3}};
+
+/* Section labels (per kind). Storage keys stay the same so overrides stay valid. */
+const SECTION_LABELS = {{
+  figure: [
+    {{key:"bio",       cn:"简介",       en:"Biography"}},
+    {{key:"works",     cn:"代表作",     en:"Major Works"}},
+    {{key:"events",    cn:"关键事件",   en:"Key Events"}},
+    {{key:"relations", cn:"相关人物",   en:"Related Figures"}},
+    {{key:"notes",     cn:"备注",       en:"Notes"}},
+  ],
+  event: [
+    {{key:"bio",       cn:"概述",       en:"Overview"}},
+    {{key:"works",     cn:"详情",       en:"Details"}},
+    {{key:"events",    cn:"时间线",     en:"Timeline"}},
+    {{key:"relations", cn:"涉及人物地点",en:"Figures & Places"}},
+    {{key:"notes",     cn:"备注",       en:"Notes"}},
+  ],
+  place: [
+    {{key:"bio",       cn:"概述",       en:"Overview"}},
+    {{key:"works",     cn:"历史",       en:"History"}},
+    {{key:"events",    cn:"关键事件",   en:"Key Events"}},
+    {{key:"relations", cn:"相关人物",   en:"Related Figures"}},
+    {{key:"notes",     cn:"备注",       en:"Notes"}},
+  ],
+  term: [
+    {{key:"bio",       cn:"定义",       en:"Definition"}},
+    {{key:"works",     cn:"例证",       en:"Examples"}},
+    {{key:"events",    cn:"历史源流",   en:"History"}},
+    {{key:"relations", cn:"相关人物作品",en:"Related Figures & Works"}},
+    {{key:"notes",     cn:"备注",       en:"Notes"}},
+  ],
+}};
+const SECTION_PLACEHOLDER = {{
+  bio:       "在此粘贴或输入正文…",
+  works:     "主要作品 / 代表事项…",
+  events:    "年表 / 关键节点…",
+  relations: "师承 / 政敌 / 赞助人 / 相关条目…",
+  notes:     "私人备注、待补…",
+}};
+
+/* =========================================================
+   STORAGE & RENDER
+   ========================================================= */
+const LS_PREFIX  = "mehf_v1_";        // override-per-seed
+const LS_USER    = "mehf_user_v1";    // user-added entries (full objects)
+function loadOverrides(id){{ try{{return JSON.parse(localStorage.getItem(LS_PREFIX+id)||"{{}}");}}catch{{return {{}};}} }}
+function saveOverrides(id,o){{ localStorage.setItem(LS_PREFIX+id, JSON.stringify(o)); }}
+function clearOverrides(id){{ localStorage.removeItem(LS_PREFIX+id); }}
+function loadUserEntries(){{ try{{return JSON.parse(localStorage.getItem(LS_USER)||"[]");}}catch{{return [];}} }}
+function saveUserEntries(arr){{ localStorage.setItem(LS_USER, JSON.stringify(arr)); }}
+function isUserId(id){{ return /^user_/.test(id); }}
+function merged(seed){{ return Object.assign({{}},seed,loadOverrides(seed.id)); }}
+function allEntries(){{
+  return FIGURES_SEED.map(merged).concat(loadUserEntries());
+}}
+function entryById(id){{
+  if(isUserId(id)){{
+    return loadUserEntries().find(x=>x.id===id) || null;
+  }}
+  const s=FIGURES_SEED.find(x=>x.id===id);
+  return s?merged(s):null;
+}}
+
+const listEl=document.getElementById('figureList');
+const profileEl=document.getElementById('profile');
+const qEl=document.getElementById('q');
+const badge=document.getElementById('savebadge');
+const countBadge=document.getElementById('countBadge');
+const sortKeyEl=document.getElementById('sortKey');
+const sortDirEl=document.getElementById('sortDir');
+const eraChips=document.getElementById('eraChips');
+const roleChips=document.getElementById('roleChips');
+const kindChips=document.getElementById('kindChips');
+
+let currentId=FIGURES_SEED[0].id;
+let state={{q:"", sortKey:"birthYear", sortDir:"asc", era:"", role:"", kind:""}};
+
+function resolvePhoto(p){{
+  if(!p.photo) return null;
+  if(/^https?:/i.test(p.photo)) return p.photo;
+  return "photos/"+p.photo;
+}}
+function avatar(p,size){{
+  const s=size||56;
+  const url=resolvePhoto(p);
+  const tpos=p.thumbPos||p.photoPos||"50% 30%";
+  const tzoom=p.thumbZoom||"1";
+  if(url){{
+    return `<img src="${{url}}" alt="${{p.name}}" loading="lazy" style="width:100%;height:100%;object-fit:cover;object-position:${{tpos}};transform:scale(${{tzoom}});" onerror="this.replaceWith(Object.assign(document.createElement('div'),{{className:'photoplaceholder',innerText:'${{p.initials||p.name[0]}}',style:'width:100%;height:100%;display:grid;place-items:center;background:#003262;color:#FDB515;font-family:Inter,sans-serif;font-size:${{Math.round(s/3)}}px;font-weight:600'}}))">`;
+  }}
+  return `<div style="width:100%;height:100%;background:#003262;display:grid;place-items:center;color:#FDB515;font-family:Inter,sans-serif;font-size:${{Math.round(s/3)}}px;font-weight:600">${{p.initials||p.name[0]}}</div>`;
+}}
+
+function getSortValue(p){{
+  switch(state.sortKey){{
+    case "surname":   return (p.surname||p.name||"").toLowerCase();
+    case "given":     return (p.given||p.name||"").toLowerCase();
+    case "era":       return (ERA_ORDER[p.era] ?? 99)+"|"+String(p.birthYear||9999).padStart(5,'0');
+    case "role":      return (ROLE_ORDER[p.role] ?? 99)+"|"+String(p.birthYear||9999).padStart(5,'0');
+    case "kind":      return (KIND_ORDER[p.kind||"figure"] ?? 99)+"|"+String(p.birthYear||9999).padStart(5,'0');
+    case "birthYear": return String(p.birthYear||9999).padStart(5,'0');
+    default:          return (p.name||"").toLowerCase();
+  }}
+}}
+
+function lifespanLabel(p){{
+  if(p.lifespan) return p.lifespan;
+  if(p.birthYear&&p.deathYear) return p.birthYear+" – "+p.deathYear;
+  if(p.birthYear) return String(p.birthYear);
+  if(p.year) return String(p.year);
+  return "";
+}}
+function kindBadgeHtml(p){{
+  const k=p.kind||"figure";
+  const lbl=KIND_LABEL[k]||["",""];
+  return `<span class="kindbadge ${{k}}">${{lbl[0]}}</span>`;
+}}
+function metaSubLine(p){{
+  const k=p.kind||"figure";
+  if(k==="figure"){{
+    const lbl=ROLE_LABEL[p.role]||["",""];
+    return lbl[0] ? lbl[0]+" · "+lifespanLabel(p) : lifespanLabel(p);
+  }}
+  return lifespanLabel(p) || (p.title || "");
+}}
+function cardHtml(p){{
+  const has=!isUserId(p.id) && Object.keys(loadOverrides(p.id)).length>0;
+  const userTag=isUserId(p.id) ? '<span class="userbadge">我的</span>' : '';
+  return `<li><div class="card ${{p.id===currentId?'active':''}}" data-id="${{p.id}}" tabindex="0" role="button">
+    <div class="photo" style="overflow:hidden">${{avatar(p,56)}}</div>
+    <div class="meta">
+      <div class="name">${{kindBadgeHtml(p)}}${{p.name}}${{userTag}}</div>
+      <div class="sub">${{p.titleZh||p.title||''}}</div>
+      <span class="age">${{metaSubLine(p)}}</span>
+      ${{isUserId(p.id) ? '<div class="role">用户添加</div>' : (has?'<div class="role">已编辑</div>':'<div class="role empty">原始</div>')}}
+    </div></div></li>`;
+}}
+
+function renderList(){{
+  let arr=allEntries();
+  if(state.q){{
+    const f=state.q.toLowerCase();
+    arr=arr.filter(p=>[p.name,p.nameZh,p.title,p.titleZh,p.affiliation,(p.specialties||[]).join(" ")].join(" ").toLowerCase().includes(f));
+  }}
+  if(state.kind) arr=arr.filter(p=>(p.kind||"figure")===state.kind);
+  if(state.era)  arr=arr.filter(p=>p.era===state.era);
+  if(state.role) arr=arr.filter(p=>p.role===state.role);
+  arr.sort((a,b)=>{{const va=getSortValue(a),vb=getSortValue(b);return va<vb?-1:va>vb?1:0;}});
+  if(state.sortDir==='desc') arr.reverse();
+  const total=FIGURES_SEED.length+loadUserEntries().length;
+  countBadge.textContent=`${{arr.length}}/${{total}} 位`;
+
+  let html='';
+  if(state.sortKey==='era'||state.sortKey==='role'||state.sortKey==='kind'){{
+    const groups={{}};
+    arr.forEach(p=>{{
+      const k=state.sortKey==='era'?p.era : state.sortKey==='role'?p.role : (p.kind||"figure");
+      (groups[k]=groups[k]||[]).push(p);
+    }});
+    Object.entries(groups).forEach(([k,items])=>{{
+      const lbl=state.sortKey==='era'?ERA_LABEL[k] : state.sortKey==='role'?ROLE_LABEL[k] : KIND_LABEL[k];
+      const head=lbl?(lbl[0]+' · '+lbl[1]):k;
+      html+=`<div class="group-header">${{head}} · ${{items.length}}</div>`+items.map(cardHtml).join('');
+    }});
+  }} else {{
+    html=arr.map(cardHtml).join('');
+  }}
+  listEl.innerHTML=html;
+  listEl.querySelectorAll('.card').forEach(c=>{{
+    c.addEventListener('click',()=>select(c.dataset.id));
+    c.addEventListener('keydown',e=>{{if(e.key==='Enter'||e.key===' '){{e.preventDefault();select(c.dataset.id);}}}});
+  }});
+}}
+
+function renderProfile(p){{
+  const fact=(lbl,en,val,key)=>`<div><div class="lbl">${{lbl}} · ${{en}}</div><div class="val"><span class="inline-edit" contenteditable="true" data-field="${{key}}" data-placeholder="—">${{val||""}}</span></div></div>`;
+  const url=resolvePhoto(p);
+  const ppos=p.photoPos||"50% 30%";
+  let srcHost="";
+  try{{ if(p.sourceUrl) srcHost=new URL(p.sourceUrl).hostname.replace(/^www\./,''); }}catch{{}}
+  const eraLbl  = ERA_LABEL[p.era]   || ["",""];
+  const roleLbl = ROLE_LABEL[p.role] || ["",""];
+  const kindLbl = KIND_LABEL[p.kind||"figure"];
+  const SECTIONS = SECTION_LABELS[p.kind||"figure"];
+
+  const factsByKind = (kind)=>{{
+    const f=[];
+    f.push(fact("中文名","Name (zh)",p.nameZh,"nameZh"));
+    f.push(fact("生卒/年代","Lifespan",lifespanLabel(p),"lifespan"));
+    f.push(fact("时代","Era",eraLbl[0]+(eraLbl[1]?' · '+eraLbl[1]:''),"_eraDisp"));
+    if(kind==="figure"){{
+      f.push(fact("身份","Role",roleLbl[0]+(roleLbl[1]?' · '+roleLbl[1]:''),"_roleDisp"));
+      f.push(fact("所属","Affiliation",p.affiliationZh||p.affiliation,"affiliationZh"));
+    }} else if(kind==="event"){{
+      f.push(fact("地点","Location",p.location||"","location"));
+      f.push(fact("类别","Type",p.eventType||"","eventType"));
+    }} else if(kind==="place"){{
+      f.push(fact("现今所在","Modern Location",p.location||"","location"));
+      f.push(fact("类别","Place Type",p.placeType||"","placeType"));
+    }} else if(kind==="term"){{
+      f.push(fact("语言","Language",p.language||"","language"));
+      f.push(fact("类别","Term Type",p.termType||"","termType"));
+    }}
+    f.push(fact("肖像位置","Photo Pos",p.photoPos,"photoPos"));
+    return f.join('');
+  }};
+
+  const delBtn = isUserId(p.id) ? '<button class="toolbtn danger" id="delEntryBtn" style="margin-left:8px">删除条目</button>' : '';
+  const kindTag = `<span class="kindbadge ${{p.kind||'figure'}}" style="font-size:11px;padding:2px 9px">${{kindLbl[0]}} · ${{kindLbl[1]}}</span>`;
+
+  profileEl.innerHTML=`
+    <div class="hero">
+      <div class="portrait" id="portrait" style="overflow:hidden">
+        ${{url?`<img id="heroImg" src="${{url}}" alt="${{p.name}}" style="width:100%;height:100%;object-fit:cover;object-position:${{ppos}}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{{className:'photoplaceholder',innerText:'${{p.initials||p.name[0]}}'}}))">`:`<div class="photoplaceholder">${{p.initials||p.name[0]}}</div>`}}
+        <div class="photoedit" contenteditable="true" data-field="photo" data-placeholder="粘贴照片 URL 或 photos/ 内文件名…">${{p.photo||""}}</div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">${{kindTag}}${{delBtn}}</div>
+        <h1 contenteditable="true" data-field="name" data-placeholder="名称">${{p.name||""}}</h1>
+        <div class="title-line"><span class="inline-edit" contenteditable="true" data-field="titleZh" data-placeholder="中文头衔">${{p.titleZh||""}}</span> · <span class="inline-edit" contenteditable="true" data-field="title" data-placeholder="Title">${{p.title||""}}</span></div>
+        <div class="factgrid">
+          ${{factsByKind(p.kind||"figure")}}
+          <div><div class="lbl">参考来源 · Source</div><div class="val">
+            ${{p.sourceUrl?`<a href="${{p.sourceUrl}}" target="_blank" rel="noreferrer">${{srcHost}}</a>`:''}}
+            <div class="inline-edit" contenteditable="true" data-field="sourceUrl" data-placeholder="URL" style="font-size:11px;color:#6b5d3d;margin-top:2px">${{p.sourceUrl||""}}</div>
+          </div></div>
+        </div>
+        <div class="tags">${{(p.specialties||[]).map((s,i)=>`<span class="tag${{i===0?' gold':''}}">${{s}}</span>`).join('')}}</div>
+      </div>
+    </div>
+    <nav class="sectionnav" id="secnav">
+      ${{SECTIONS.map((s,i)=>`<a href="#sec-${{s.key}}" class="${{i===0?'active':''}}">${{s.cn}} ${{s.en}}</a>`).join('')}}
+    </nav>
+    <div class="body">
+      ${{SECTIONS.map(s=>`<section id="sec-${{s.key}}"><h2><span class="left">${{s.cn}} <span class="en">${{s.en}}</span></span><button class="clear" data-clear="${{s.key}}">清空</button></h2><div class="editable" contenteditable="true" data-field="${{s.key}}" data-placeholder="${{SECTION_PLACEHOLDER[s.key]||''}}">${{p[s.key]||""}}</div></section>`).join('')}}
+    </div>`;
+
+  profileEl.querySelectorAll('[contenteditable="true"]').forEach(el=>{{
+    el.addEventListener('input',onEdit);
+    el.addEventListener('blur',onBlur);
+    el.addEventListener('paste',onPaste);
+  }});
+  profileEl.querySelectorAll('button[data-clear]').forEach(b=>{{
+    b.addEventListener('click',()=>{{
+      const k=b.dataset.clear;
+      const tgt=profileEl.querySelector(`[data-field="${{k}}"]`);
+      if(tgt&&confirm('清空当前段？')){{
+        tgt.innerHTML="";
+        if(isUserId(currentId)){{
+          const arr=loadUserEntries();
+          const idx=arr.findIndex(x=>x.id===currentId);
+          if(idx>=0){{arr[idx][k]="";saveUserEntries(arr);flashSaved();}}
+        }} else {{
+          const ov=loadOverrides(currentId);ov[k]="";saveOverrides(currentId,ov);flashSaved();
+        }}
+      }}
+    }});
+  }});
+  profileEl.querySelectorAll('.rellink[data-id]').forEach(a=>{{
+    a.addEventListener('click',e=>{{e.preventDefault();select(a.dataset.id);}});
+  }});
+
+  const del=profileEl.querySelector('#delEntryBtn');
+  if(del){{
+    del.addEventListener('click',()=>{{
+      if(!confirm('确认删除当前用户添加的条目？此操作仅作用于本浏览器。'))return;
+      const arr=loadUserEntries().filter(x=>x.id!==currentId);
+      saveUserEntries(arr);
+      currentId=FIGURES_SEED[0].id;
+      const p=entryById(currentId);
+      renderList(); renderProfile(p);
+    }});
+  }}
+
+  const nav=profileEl.querySelector('#secnav');
+  nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',e=>{{e.preventDefault();const t=profileEl.querySelector(a.getAttribute('href'));if(t)t.scrollIntoView({{behavior:'smooth',block:'start'}});}}));
+  if(typeof IntersectionObserver !== 'undefined'){{
+    const obs=new IntersectionObserver(entries=>{{
+      entries.forEach(e=>{{if(e.isIntersecting)nav.querySelectorAll('a').forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id));}});
+    }},{{rootMargin:'-30% 0px -55% 0px'}});
+    profileEl.querySelectorAll('.body section').forEach(s=>obs.observe(s));
+  }}
+}}
+
+let saveTimer=null;
+function setSavingState(s){{badge.classList.remove('saving','saved');if(s==='saving'){{badge.classList.add('saving');badge.textContent='保存中…';}}else if(s==='saved'){{badge.classList.add('saved');badge.textContent='已保存';}}else badge.textContent='已保存';}}
+function flashSaved(){{setSavingState('saved');setTimeout(()=>setSavingState(''),1500);renderList();}}
+function onEdit(){{setSavingState('saving');clearTimeout(saveTimer);saveTimer=setTimeout(persist,400);}}
+function onBlur(){{clearTimeout(saveTimer);persist();}}
+
+const INLINE_FIELDS=['name','nameZh','title','titleZh','lifespan','affiliationZh','photoPos','sourceUrl','photo',
+                     'location','eventType','placeType','language','termType'];
+const SECTION_KEYS=['bio','works','events','relations','notes'];
+
+function persist(){{
+  const isUser=isUserId(currentId);
+  const baseSeed=isUser ? null : FIGURES_SEED.find(x=>x.id===currentId);
+  if(!isUser && !baseSeed) return;
+
+  if(isUser){{
+    const arr=loadUserEntries();
+    const idx=arr.findIndex(x=>x.id===currentId);
+    if(idx<0) return;
+    const obj=arr[idx];
+    profileEl.querySelectorAll('[contenteditable="true"][data-field]').forEach(el=>{{
+      const f=el.dataset.field; if(f.startsWith('_')) return;
+      if(INLINE_FIELDS.includes(f)){{ obj[f]=el.textContent.trim(); }}
+      else if(SECTION_KEYS.includes(f)){{
+        const v=el.innerHTML.trim();
+        const empty=v===''||v==='<br>'||v==='<div><br></div>';
+        obj[f]=empty?"":v;
+      }}
+    }});
+    arr[idx]=obj; saveUserEntries(arr); flashSaved(); return;
+  }}
+
+  const ov=loadOverrides(currentId);
+  profileEl.querySelectorAll('[contenteditable="true"][data-field]').forEach(el=>{{
+    const f=el.dataset.field; if(f.startsWith('_')) return;
+    if(INLINE_FIELDS.includes(f)){{
+      const v=el.textContent.trim();
+      if(v!==(baseSeed[f]||"")) ov[f]=v; else delete ov[f];
+    }} else if(SECTION_KEYS.includes(f)){{
+      const v=el.innerHTML.trim();
+      const empty=v===''||v==='<br>'||v==='<div><br></div>';
+      if(!empty&&v!==(baseSeed[f]||"")) ov[f]=v;
+      else if(empty) delete ov[f];
+      else if(v===(baseSeed[f]||"")) delete ov[f];
+    }}
+  }});
+  if(Object.keys(ov).length===0) clearOverrides(currentId); else saveOverrides(currentId,ov);
+  flashSaved();
+}}
+function onPaste(e){{
+  const t=e.currentTarget;
+  setTimeout(()=>{{
+    t.querySelectorAll('script,style,iframe,object,embed').forEach(n=>n.remove());
+    t.querySelectorAll('*').forEach(n=>{{[...n.attributes].forEach(a=>{{if(/^on/i.test(a.name))n.removeAttribute(a.name);}});}});
+    onEdit();
+  }},0);
+}}
+function select(id){{
+  if(profileEl.querySelector('[contenteditable="true"]')) persist();
+  currentId=id;
+  const p=entryById(id); if(!p) return;
+  renderList(); renderProfile(p); window.scrollTo({{top:0,behavior:'smooth'}});
+}}
+
+qEl.addEventListener('input',e=>{{state.q=e.target.value;renderList();}});
+sortKeyEl.addEventListener('change',e=>{{state.sortKey=e.target.value;renderList();}});
+sortDirEl.addEventListener('click',()=>{{state.sortDir=state.sortDir==='asc'?'desc':'asc';sortDirEl.dataset.dir=state.sortDir;renderList();}});
+eraChips.addEventListener('click',e=>{{if(!e.target.classList.contains('chip'))return;eraChips.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));e.target.classList.add('active');state.era=e.target.dataset.era||"";renderList();}});
+roleChips.addEventListener('click',e=>{{if(!e.target.classList.contains('chip'))return;roleChips.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));e.target.classList.add('active');state.role=e.target.dataset.role||"";renderList();}});
+kindChips.addEventListener('click',e=>{{if(!e.target.classList.contains('chip'))return;kindChips.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));e.target.classList.add('active');state.kind=e.target.dataset.kind||"";renderList();}});
+
+document.getElementById('resetCurrent').addEventListener('click',()=>{{
+  if(isUserId(currentId)){{alert('用户添加的条目无 "重置" 概念。如需删除，请用详情页右上角的 删除条目 按钮。');return;}}
+  if(!confirm('清空当前条目的自定义内容？'))return;
+  clearOverrides(currentId);select(currentId);
+}});
+
+document.getElementById('exportBtn').addEventListener('click',()=>{{
+  const overrides={{}};
+  FIGURES_SEED.forEach(s=>{{const o=loadOverrides(s.id);if(Object.keys(o).length)overrides[s.id]=o;}});
+  const dump={{ overrides, userEntries: loadUserEntries() }};
+  const blob=new Blob([JSON.stringify(dump,null,2)],{{type:'application/json'}});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='middle-english-figures-backup.json';
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}});
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',e=>{{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{{
+    try{{
+      const data=JSON.parse(ev.target.result);
+      if(data && data.overrides && Array.isArray(data.userEntries)){{
+        Object.entries(data.overrides).forEach(([id,v])=>saveOverrides(id,v));
+        saveUserEntries(data.userEntries);
+      }} else {{
+        Object.entries(data).forEach(([id,v])=>saveOverrides(id,v));
+      }}
+      alert('已导入。');select(currentId);
+    }}catch(err){{alert('导入失败：'+err.message);}}
+  }};
+  r.readAsText(f);
+}});
+
+/* ---------- New entry dialog ---------- */
+const addBtn      = document.getElementById('addBtn');
+const addDialog   = document.getElementById('addDialog');
+const addClose    = document.getElementById('addClose');
+const addCancel   = document.getElementById('addCancel');
+const addSave     = document.getElementById('addSave');
+const addKind     = document.getElementById('addKind');
+const addName     = document.getElementById('addName');
+const addNameZh   = document.getElementById('addNameZh');
+const addYearStart= document.getElementById('addYearStart');
+const addYearEnd  = document.getElementById('addYearEnd');
+const addEra      = document.getElementById('addEra');
+const addRole     = document.getElementById('addRole');
+const addTitle    = document.getElementById('addTitle');
+const addSummary  = document.getElementById('addSummary');
+const addUrl      = document.getElementById('addUrl');
+
+function openAddDialog(){{ addDialog.classList.add('open'); addName.focus(); }}
+function closeAddDialog(){{ addDialog.classList.remove('open'); }}
+function clearAddDialog(){{
+  addKind.value="figure"; addName.value=""; addNameZh.value="";
+  addYearStart.value=""; addYearEnd.value=""; addEra.value="";
+  addRole.value=""; addTitle.value=""; addSummary.value=""; addUrl.value="";
+}}
+function syncAddRoleVisibility(){{
+  addRole.disabled = addKind.value !== "figure";
+  if(addKind.value !== "figure") addRole.value="";
+}}
+addBtn   .addEventListener('click', ()=>{{ if(addDialog.classList.contains('open')) closeAddDialog(); else openAddDialog(); }});
+addClose .addEventListener('click', closeAddDialog);
+addCancel.addEventListener('click', closeAddDialog);
+addKind  .addEventListener('change', syncAddRoleVisibility);
+syncAddRoleVisibility();
+
+function makeId(name){{
+  const slug = (name||"entry").toLowerCase()
+    .replace(/[^a-z0-9一-鿿]+/g,'-')
+    .replace(/^-+|-+$/g,'').slice(0,30) || "entry";
+  return "user_"+slug+"_"+Date.now().toString(36);
+}}
+function parseYearLike(s){{ const m=String(s||"").match(/-?\d{{1,4}}/); return m?parseInt(m[0],10):null; }}
+
+addSave.addEventListener('click', ()=>{{
+  const name=(addName.value||"").trim();
+  if(!name){{ alert('请填写英文名称（Name）。'); addName.focus(); return; }}
+  const kind=addKind.value||"figure";
+  const yStart=parseYearLike(addYearStart.value);
+  const yEnd  =parseYearLike(addYearEnd.value);
+  let lifespan="";
+  if(addYearStart.value && addYearEnd.value) lifespan = addYearStart.value.trim()+" – "+addYearEnd.value.trim();
+  else if(addYearStart.value) lifespan = addYearStart.value.trim();
+
+  const initials = (name.match(/[A-Z]/g)||[name[0]||"?"]).slice(0,2).join('').toUpperCase();
+  const summary = (addSummary.value||"").trim();
+
+  const obj = {{
+    id: makeId(name),
+    kind,
+    name,
+    nameZh: (addNameZh.value||"").trim(),
+    surname: name.split(' ').slice(-1)[0] || name,
+    given:   name.split(' ')[0] || name,
+    era: addEra.value || "",
+    role: kind==="figure" ? (addRole.value||"") : "",
+    birthYear: yStart || null,
+    deathYear: yEnd   || null,
+    year:      yStart || null,
+    lifespan,
+    title: (addTitle.value||"").trim(),
+    titleZh: "",
+    affiliation: "",
+    affiliationZh: "",
+    location: "",
+    eventType: "",
+    placeType: "",
+    language: "",
+    termType: "",
+    specialties: [],
+    initials,
+    photo: "", photoPos: "50% 30%", thumbPos: "50% 35%", thumbZoom: "1",
+    sourceUrl: (addUrl.value||"").trim(),
+    bio: summary ? "<p>"+summary.replace(/</g,'&lt;')+"</p>" : "",
+    works: "", events: "", relations: "", notes: "",
+  }};
+
+  const arr=loadUserEntries(); arr.push(obj); saveUserEntries(arr);
+  closeAddDialog(); clearAddDialog();
+  if(state.kind && state.kind!==obj.kind){{
+    state.kind=obj.kind;
+    kindChips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', c.dataset.kind===obj.kind));
+  }}
+  currentId=obj.id;
+  renderList(); renderProfile(entryById(obj.id));
+  window.scrollTo({{top:0,behavior:'smooth'}});
+}});
+
+renderList();
+renderProfile(entryById(currentId));
+</script>
+</body>
+</html>
+"""
+
+TARGET.parent.mkdir(parents=True, exist_ok=True)
+TARGET.write_text(HTML, encoding="utf-8")
+print(f"Wrote {TARGET} ({len(HTML):,} chars, {count} figures)")
+                                                   
