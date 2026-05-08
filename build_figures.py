@@ -2148,7 +2148,7 @@ let state={{q:"", sortKey:"birthYear", sortDir:"asc", era:"", role:"", kind:""}}
 
 function resolvePhoto(p){{
   if(!p.photo) return null;
-  if(/^https?:/i.test(p.photo)) return p.photo;
+  if(/^(https?:|data:|blob:)/i.test(p.photo)) return p.photo;
   return "photos/"+p.photo;
 }}
 function avatar(p,size){{
