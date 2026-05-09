@@ -133,6 +133,9 @@ ul.faculty::-webkit-scrollbar-thumb:hover{background:#cbbe9f}
   padding:10px; border-radius:8px; cursor:pointer;
   border:1px solid transparent;
   transition: all .15s ease; align-items:center; margin-bottom:2px;
+  /* 统一卡片尺寸：固定高度，所有卡片视觉一致 */
+  height: 80px;
+  overflow: hidden;
 }
 .card:hover{background:#fff; border-color:var(--rule); transform:translateY(-1px)}
 .card.active{background:#fffaee; border-color:var(--berkeley-gold); box-shadow:0 0 0 1px var(--berkeley-gold) inset}
@@ -143,6 +146,7 @@ ul.faculty::-webkit-scrollbar-thumb:hover{background:#cbbe9f}
   color:#fff; font-weight:600; font-size:18px;
   border:2px solid #fff; box-shadow: 0 0 0 1px var(--rule);
   font-family:'Inter',sans-serif;
+  flex-shrink:0;
 }
 .card .photo img{
   width:100%; height:100%; object-fit:cover;
@@ -151,18 +155,28 @@ ul.faculty::-webkit-scrollbar-thumb:hover{background:#cbbe9f}
   transform-origin:var(--pos, 50% 35%);
   display:block;
 }
+.card .meta{ min-width:0; overflow:hidden; }
 .card .meta .name{
   font-family:'EB Garamond',serif; font-weight:600; font-size:16px;
   color:var(--ink); line-height:1.2;
+  /* 单行省略号，避免长名字撑高卡片 */
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.card .meta .sub{font-size:12px; color:var(--ink-soft); margin-top:1px; font-family:'Inter',sans-serif}
+.card .meta .sub{
+  font-size:12px; color:var(--ink-soft); margin-top:1px; font-family:'Inter',sans-serif;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
 .card .meta .age{
   font-size:11px; color:#6b5d3d; font-family:'Inter',sans-serif; margin-top:3px;
   display:inline-block; background:#f3e9c8; padding:1px 7px; border-radius:10px;
+  max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  vertical-align:middle;
 }
 .card .meta .role{
   font-size:10px; letter-spacing:1px; text-transform:uppercase;
   color:var(--accent); margin-top:3px; font-family:'Inter',sans-serif;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  display:none; /* 隐藏第四行（已编辑/原始/用户添加），让卡片更紧凑统一 */
 }
 .card .meta .role.empty{color:#9e8b5d}
 
@@ -256,6 +270,29 @@ main.profile{
 
 .body{padding:24px 32px 32px}
 .body section{margin-bottom:30px; scroll-margin-top:140px}
+
+/* 简介 / 作品 / 事件 / 关系 / 备注 等栏目里粘贴/插入的图片：统一为书本大小（约 5:7 竖版） */
+.body .editable img{
+  display:block;
+  width:180px;
+  height:252px;
+  object-fit:cover;
+  margin:14px auto;
+  border-radius:4px;
+  border:1px solid var(--rule);
+  box-shadow:0 6px 16px rgba(28,24,18,.18), 0 2px 4px rgba(28,24,18,.10);
+  background:#efe6d2;
+}
+/* 如果图片被 <a> 包裹也保持同样尺寸 */
+.body .editable a img{ margin:14px auto; }
+/* 多张图片并排时，给个 figure 容器也兼容；inline 图标也允许，但带 .icon 才不被强制书形 */
+.body .editable img.icon{
+  width:auto; height:1.1em; display:inline; margin:0 .15em;
+  box-shadow:none; border:none; border-radius:0; background:transparent;
+}
+@media (max-width: 920px){
+  .body .editable img{ width:150px; height:210px; }
+}
 .body h2{
   font-family:'EB Garamond',serif;
   font-size:23px; font-weight:600;
@@ -526,79 +563,6 @@ aside.directory:has(.adddialog.open) .controls{
         </div>
       </div>
 
-      <div class="adddialog" id="addDialog">
-        <div class="head"><span>新建条目 · New Entry</span><button type="button" class="toolbtn ghost" id="addClose">×</button></div>
-        <div>
-          <div class="lab">类型 · Kind</div>
-          <select id="addKind">
-            <option value="figure">人物 Figure</option>
-            <option value="event">事件 Event</option>
-            <option value="place">地点 Place</option>
-            <option value="term">术语 Term</option>
-          </select>
-        </div>
-        <div class="grid2">
-          <div>
-            <div class="lab">名称 (英) · Name</div>
-            <input type="text" id="addName" placeholder="e.g. Geoffrey Chaucer">
-          </div>
-          <div>
-            <div class="lab">中文名 · Name (zh)</div>
-            <input type="text" id="addNameZh" placeholder="例：杰弗里·乔叟">
-          </div>
-        </div>
-        <div class="grid2">
-          <div>
-            <div class="lab">起始年 · Year (start)</div>
-            <input type="text" id="addYearStart" placeholder="例：1343 或 c.1343">
-          </div>
-          <div>
-            <div class="lab">终止年 · Year (end)</div>
-            <input type="text" id="addYearEnd" placeholder="例：1400 或留空">
-          </div>
-        </div>
-        <div class="grid2">
-          <div>
-            <div class="lab">时代 · Era</div>
-            <select id="addEra">
-              <option value="">— 选择 —</option>
-              <option value="early-medieval">早期中世纪 1100–1250</option>
-              <option value="high-medieval">中世纪盛期 1250–1400</option>
-              <option value="late-medieval">中世纪晚期 1400–1485</option>
-              <option value="tudor">都铎早期 1485–1547</option>
-            </select>
-          </div>
-          <div>
-            <div class="lab">身份 · Role <span style="color:#a99770">(仅人物)</span></div>
-            <select id="addRole">
-              <option value="">— 选择 —</option>
-              <option value="monarch">君主 Monarch</option>
-              <option value="poet">诗人 Poet</option>
-              <option value="prose-author">散文家 Prose Author</option>
-              <option value="chronicler">编年史家 Chronicler</option>
-              <option value="mystic">神秘主义者 Mystic</option>
-              <option value="prelate">教士 Prelate</option>
-              <option value="printer">印刷家 Printer</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <div class="lab">头衔 / 简介短语 · Title</div>
-          <input type="text" id="addTitle" placeholder="例：Court Poet · Father of English Poetry">
-        </div>
-        <div>
-          <div class="lab">概述 · Summary</div>
-          <textarea id="addSummary" placeholder="一两句话简介，可在新建后继续在右侧详情编辑…"></textarea>
-        </div>
-        <div>
-          <div class="lab">参考链接 · Source URL</div>
-          <input type="text" id="addUrl" placeholder="https://en.wikipedia.org/wiki/...">
-        </div>
-        <div class="actions">
-          <button type="button" class="toolbtn ghost" id="addCancel">取消</button>
-          <button type="button" class="toolbtn" id="addSave">保存并打开</button>
-        </div>
-      </div>
     </div>
 
     <ul class="faculty" id="figureList"></ul>
@@ -1745,7 +1709,10 @@ function renderProfile(p){
   };
 
   const delBtn = isUserId(p.id) ? '<button class="toolbtn danger" id="delEntryBtn" style="margin-left:8px">删除条目</button>' : '';
-  const kindTag = `<span class="kindbadge ${p.kind||'figure'}" style="font-size:11px;padding:2px 9px">${kindLbl[0]} · ${kindLbl[1]}</span>`;
+  /* user entries: editable kind via <select>; seed entries: static badge */
+  const kindTag = isUserId(p.id)
+    ? `<select id="entryKindSel" class="kindbadge ${p.kind||'figure'}" style="font-size:11px;padding:2px 9px;border:none;cursor:pointer;font-weight:700;letter-spacing:.5px">${Object.entries(KIND_LABEL).map(([k,v])=>`<option value="${k}" ${k===(p.kind||'figure')?'selected':''}>${v[0]} · ${v[1]}</option>`).join('')}</select>`
+    : `<span class="kindbadge ${p.kind||'figure'}" style="font-size:11px;padding:2px 9px">${kindLbl[0]} · ${kindLbl[1]}</span>`;
 
   profileEl.innerHTML=`
     <div class="hero">
@@ -1830,6 +1797,19 @@ function renderProfile(p){
       currentId=FIGURES_SEED[0].id;
       const p=entryById(currentId);
       renderList(); renderProfile(p);
+    });
+  }
+
+  /* kind selector for user entries — switching kind re-renders sections per kind */
+  const kindSel=profileEl.querySelector('#entryKindSel');
+  if(kindSel){
+    kindSel.addEventListener('change',()=>{
+      const arr=loadUserEntries();
+      const idx=arr.findIndex(x=>x.id===currentId);
+      if(idx<0) return;
+      arr[idx].kind=kindSel.value;
+      saveUserEntries(arr);
+      renderList(); renderProfile(entryById(currentId)); flashSaved();
     });
   }
 
@@ -1997,46 +1977,8 @@ document.getElementById('importFile').addEventListener('change',e=>{
   r.readAsText(f);
 });
 
-/* ---------- New entry dialog ---------- */
-const addBtn      = document.getElementById('addBtn');
-const addDialog   = document.getElementById('addDialog');
-const addClose    = document.getElementById('addClose');
-const addCancel   = document.getElementById('addCancel');
-const addSave     = document.getElementById('addSave');
-const addKind     = document.getElementById('addKind');
-const addName     = document.getElementById('addName');
-const addNameZh   = document.getElementById('addNameZh');
-const addYearStart= document.getElementById('addYearStart');
-const addYearEnd  = document.getElementById('addYearEnd');
-const addEra      = document.getElementById('addEra');
-const addRole     = document.getElementById('addRole');
-const addTitle    = document.getElementById('addTitle');
-const addSummary  = document.getElementById('addSummary');
-const addUrl      = document.getElementById('addUrl');
-
-function openAddDialog(){
-  addDialog.classList.add('open');
-  /* scroll the dialog into view inside the controls panel */
-  setTimeout(()=>{
-    addDialog.scrollIntoView({behavior:'smooth', block:'start'});
-    addName.focus();
-  }, 30);
-}
-function closeAddDialog(){ addDialog.classList.remove('open'); }
-function clearAddDialog(){
-  addKind.value="figure"; addName.value=""; addNameZh.value="";
-  addYearStart.value=""; addYearEnd.value=""; addEra.value="";
-  addRole.value=""; addTitle.value=""; addSummary.value=""; addUrl.value="";
-}
-function syncAddRoleVisibility(){
-  addRole.disabled = addKind.value !== "figure";
-  if(addKind.value !== "figure") addRole.value="";
-}
-addBtn   .addEventListener('click', ()=>{ if(addDialog.classList.contains('open')) closeAddDialog(); else openAddDialog(); });
-addClose .addEventListener('click', closeAddDialog);
-addCancel.addEventListener('click', closeAddDialog);
-addKind  .addEventListener('change', syncAddRoleVisibility);
-syncAddRoleVisibility();
+/* ---------- + 新建：直接在右侧主面板生成空白用户条目 ---------- */
+const addBtn = document.getElementById('addBtn');
 
 function makeId(name){
   const slug = (name||"entry").toLowerCase()
@@ -2044,69 +1986,63 @@ function makeId(name){
     .replace(/^-+|-+$/g,'').slice(0,30) || "entry";
   return "user_"+slug+"_"+Date.now().toString(36);
 }
-function parseYearLike(s){ const m=String(s||"").match(/-?\d{1,4}/); return m?parseInt(m[0],10):null; }
 
-addSave.addEventListener('click', ()=>{
-  const name=(addName.value||"").trim();
-  if(!name){ alert('请填写英文名称（Name）。'); addName.focus(); return; }
-  const kind=addKind.value||"figure";
-  const yStart=parseYearLike(addYearStart.value);
-  const yEnd  =parseYearLike(addYearEnd.value);
-  let lifespan="";
-  if(addYearStart.value && addYearEnd.value) lifespan = addYearStart.value.trim()+" – "+addYearEnd.value.trim();
-  else if(addYearStart.value) lifespan = addYearStart.value.trim();
-
-  const initials = (name.match(/[A-Z]/g)||[name[0]||"?"]).slice(0,2).join('').toUpperCase();
-  const summary = (addSummary.value||"").trim();
-
-  const obj = {
-    id: makeId(name),
-    kind,
-    name,
-    nameZh: (addNameZh.value||"").trim(),
-    surname: name.split(' ').slice(-1)[0] || name,
-    given:   name.split(' ')[0] || name,
-    era: addEra.value || "",
-    role: kind==="figure" ? (addRole.value||"") : "",
-    birthYear: yStart || null,
-    deathYear: yEnd   || null,
-    year:      yStart || null,
-    lifespan,
-    title: (addTitle.value||"").trim(),
-    titleZh: "",
-    affiliation: "",
-    affiliationZh: "",
-    location: "",
-    eventType: "",
-    placeType: "",
-    language: "",
-    termType: "",
+function buildBlankEntry(kind, name){
+  const nm = (name||'').trim() || '新条目';
+  /* 简单从 "Geoffrey Chaucer" 这种名字里拆 surname/given */
+  const parts = nm.split(/\s+/);
+  const given   = parts.length>1 ? parts.slice(0,-1).join(' ') : nm;
+  const surname = parts.length>1 ? parts[parts.length-1] : nm;
+  /* initials：取前两个字符（中文取首字，英文取首字母大写） */
+  const initials = (function(){
+    const ascii = nm.match(/[A-Za-z]+/g);
+    if(ascii && ascii.length){
+      return (ascii[0][0] + (ascii[1]?ascii[1][0]:'')).toUpperCase();
+    }
+    return nm.slice(0,2);
+  })();
+  return {
+    id: makeId(nm),
+    kind: kind || 'figure',
+    name: nm,
+    nameZh: '',
+    surname, given,
+    era: '', role: '',
+    birthYear: null, deathYear: null, year: null,
+    lifespan: '',
+    title: '', titleZh: '',
+    affiliation: '', affiliationZh: '',
+    location: '', eventType: '', placeType: '',
+    language: '', termType: '',
     specialties: [],
     initials,
     photo: "", photoPos: "50% 30%", thumbPos: "50% 35%", thumbZoom: "1",
-    sourceUrl: (addUrl.value||"").trim(),
-    bio: summary ? "<p>"+summary.replace(/</g,'&lt;')+"</p>" : "",
-    works: "", events: "", relations: "", notes: "",
+    sourceUrl: '',
+    bio: '', works: '', events: '', relations: '', notes: '',
   };
+}
 
-  const arr=loadUserEntries(); arr.push(obj); saveUserEntries(arr);
-  closeAddDialog(); clearAddDialog();
-  /* clear search box so the new entry isn't hidden by a stale query */
-  if(state.q){ state.q=""; qEl.value=""; }
-  /* reset any active filter that would hide the new entry */
-  if(state.kind && state.kind!==obj.kind){
-    state.kind=obj.kind;
-    kindChips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', c.dataset.kind===obj.kind));
-  }
-  if(state.era && state.era!==obj.era){
-    state.era="";
-    eraChips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', !c.dataset.era));
-  }
-  if(state.role && state.role!==obj.role){
-    state.role="";
-    roleChips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', !c.dataset.role));
-  }
-  currentId=obj.id;
+addBtn.addEventListener('click', ()=>{
+  /* persist any pending edits on the current profile first */
+  if(profileEl.querySelector('[contenteditable="true"]')) persist();
+
+  /* 只让用户粘贴/输入一个名字，立即创建条目 */
+  const raw = window.prompt('粘贴或输入条目名称（中文/英文均可，例如 “Geoffrey Chaucer” 或 “乔叟”）：','');
+  if(raw===null) return;            /* 用户取消 */
+  const name = raw.trim();
+  if(!name) return;                 /* 空字符串当作取消处理 */
+
+  const obj = buildBlankEntry('figure', name);
+  const arr = loadUserEntries(); arr.push(obj); saveUserEntries(arr);
+
+  /* clear filters/search so the new entry isn't hidden */
+  state.q="";   if(qEl)qEl.value="";
+  state.kind=""; state.era=""; state.role="";
+  if(kindChips) kindChips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', !c.dataset.kind));
+  if(eraChips)  eraChips .querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', !c.dataset.era));
+  if(roleChips) roleChips.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', !c.dataset.role));
+
+  currentId = obj.id;
   renderList(); renderProfile(entryById(obj.id));
   window.scrollTo({top:0,behavior:'smooth'});
 });
